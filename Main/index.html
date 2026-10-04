@@ -132,8 +132,28 @@
               <div class="field full"><span class="field-label">Ativo?</span><label class="active-indicator" for="activeClient"><input id="activeClient" type="checkbox" aria-label="Ativo?" disabled><span id="activeClientLabel"></span></label></div>
             </div>
           </details>
-          <details class="form-section"><summary>Documentação da Obra</summary><div class="form-section-body form-grid"><div class="field full"><label for="documentationStatus">Etapa do processo</label><select id="documentationStatus" name="documentationStatus" required><option value="Pendente">Pendente</option><option value="Pendente em Contrato">Pendente em Contrato</option><option value="Pendente em contrato e Ficha Cadastral">Pendente em contrato e Ficha Cadastral</option><option value="Pendente em Proposta e Contrato">Pendente em Proposta e Contrato</option><option value="Completa">Completa</option></select></div></div></details>
-          <details class="form-section"><summary>Comercial</summary><div class="form-section-body"><p class="form-section-placeholder">Nenhuma informação cadastrada.</p></div></details>
+          <details class="form-section">
+            <summary>Documentação da Obra</summary>
+            <div class="form-section-body form-grid">
+              <div class="field"><label for="workSystem">Sistema da Obra</label><select id="workSystem" name="workSystem"><option value="">Selecione</option><option>ENVIO P E-MAIL</option><option>SGI</option><option>DIGIDOX</option><option>GD4</option><option>SSELCON</option><option>Envio P Whatssap</option><option>Inmeta</option><option>Sercae</option></select></div>
+              <div class="field"><label for="approvalDeadline">Prz Aprovação</label><select id="approvalDeadline" name="approvalDeadline"><option value="">Selecione</option><option>10 dias</option><option>9 dias</option><option>8 dias</option><option>7 dias</option><option>6 dias</option><option>5 dias</option><option>3 dias</option><option>2 dias</option><option>1 dia</option><option>30 dias</option></select></div>
+              <div class="field"><label for="tstPhone">Telefone TST</label><input id="tstPhone" name="tstPhone" type="tel" placeholder="Telefone"></div>
+              <div class="field"><label for="tstEmail">E-mail TST</label><input id="tstEmail" name="tstEmail" type="email" placeholder="nome@empresa.com"></div>
+              <div class="field"><span class="field-label">Instalação</span><label class="active-indicator" for="installation"><input id="installation" name="installation" type="checkbox"> Instalação realizada</label></div>
+              <div class="field"><span class="field-label">Vistoria</span><label class="active-indicator" for="inspection"><input id="inspection" name="inspection" type="checkbox"> Vistoria realizada</label></div>
+            </div>
+          </details>
+          <details class="form-section">
+            <summary>Comercial</summary>
+            <div class="form-section-body form-grid">
+              <div class="field"><label for="proposalDate">Preenchimento</label><input id="proposalDate" name="proposalDate" type="date"></div>
+              <div class="field"><label for="proposalStatus">Status de Proposta</label><select id="proposalStatus" name="proposalStatus"><option value="">Selecione</option><option>Negada</option><option>Em negociação</option><option>Aprovada</option></select></div>
+              <div class="field"><span class="field-label">Proposta</span><div class="linked-document" id="commercial-proposal"><span class="linked-document-name">Sem documento anexado.</span><label class="document-upload" title="Adicionar Proposta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m-4 4 4-4 4 4M5 14v5h14v-5"/></svg><input class="commercial-file-input" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.odt,.ods,.jpg,.jpeg,.png" data-document-type="proposal" aria-label="Adicionar documento Proposta"></label></div></div>
+              <div class="field"><span class="field-label">Ficha Cadastral</span><div class="linked-document" id="commercial-registration"><span class="linked-document-name">Sem documento anexado.</span><label class="document-upload" title="Adicionar Ficha Cadastral"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m-4 4 4-4 4 4M5 14v5h14v-5"/></svg><input class="commercial-file-input" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.odt,.ods,.jpg,.jpeg,.png" data-document-type="registration" aria-label="Adicionar documento Ficha Cadastral"></label></div></div>
+              <div class="field"><span class="field-label">Contrato</span><div class="linked-document" id="commercial-contract"><span class="linked-document-name">Sem documento anexado.</span><label class="document-upload" title="Adicionar Contrato"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m-4 4 4-4 4 4M5 14v5h14v-5"/></svg><input class="commercial-file-input" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.odt,.ods,.jpg,.jpeg,.png" data-document-type="contract" aria-label="Adicionar documento Contrato"></label></div></div>
+              <div class="field full"><span class="field-label">Documentação</span><output class="documentation-summary" id="commercial-documentation-status">🔴 Pendente</output></div>
+            </div>
+          </details>
         </div>
       </div>
       <div class="dialog-actions">

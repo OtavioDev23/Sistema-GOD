@@ -610,6 +610,53 @@ tbody tr:hover {
       white-space: nowrap;
 }
 
+.linked-document {
+      display: flex;
+      min-height: 46px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      overflow: hidden;
+      padding: 5px 7px 5px 11px;
+      border: 1px solid #dfe4dd;
+      border-radius: 6px;
+      background: #fafbf9;
+      color: #69746c;
+      font-size: 11px;
+      transition: border-color .16s ease, background .16s ease, box-shadow .16s ease;
+}
+
+.linked-document:focus-within {
+      border-color: #9aada0;
+      background: white;
+      box-shadow: 0 0 0 3px rgb(72 112 83 / 9%);
+}
+
+.linked-document-name {
+      min-width: 0;
+      overflow: hidden;
+      color: #7b857e;
+      font-size: 11px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+}
+
+.linked-document .document-file-name {
+      max-width: 100%;
+      color: #344d3c;
+      font-size: 11px;
+      font-weight: 600;
+}
+
+.documentation-summary {
+      display: flex;
+      min-height: 39px;
+      align-items: center;
+      color: #505b54;
+      font-size: 12px;
+      font-weight: 700;
+}
+
 .document-actions {
       flex: 0 0 auto;
       gap: 3px;
@@ -618,29 +665,36 @@ tbody tr:hover {
 .document-upload {
       position: relative;
       display: inline-grid;
-      width: 31px;
-      height: 31px;
+      width: 34px;
+      height: 34px;
       flex: 0 0 auto;
       place-items: center;
-      border: 1px solid transparent;
-      border-radius: 5px;
-      color: #768078;
+      border: 1px solid #e2e7e0;
+      border-radius: 6px;
+      background: white;
+      color: #53695a;
       cursor: pointer;
+      transition: border-color .16s ease, background .16s ease, color .16s ease, transform .16s ease;
 }
 
 .document-upload:hover,
 .document-upload:focus-within {
-      border-color: var(--line);
-      background: var(--white);
-      color: var(--green);
+      border-color: #aab9ad;
+      background: #f1f5f1;
+      color: #263b2c;
+}
+
+.document-upload:active {
+      transform: translateY(1px);
 }
 
 .document-upload svg {
-      width: 15px;
-      height: 15px;
+      width: 16px;
+      height: 16px;
 }
 
-.document-file-input {
+.document-file-input,
+.commercial-file-input {
       position: absolute;
       inset: 0;
       width: 100%;

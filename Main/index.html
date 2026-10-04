@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f7f4">
+  <title>GOD Sistemas de Proteções</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <div class="app">
+    <aside class="sidebar" aria-label="Navegação principal">
+      <!-- Identidade da empresa e navegacao entre as areas do sistema. -->
+      <div class="brand">
+        <div class="brand-mark">
+          <img src="../image/Logo.png" alt="Logo da GOD Sistemas de Proteções">
+        </div>
+        <div class="brand-name">GOD Sistemas<span>de Proteções</span></div>
+      </div>
+      <div class="nav-label">Empresa</div>
+      <nav class="nav-list" aria-label="Áreas da empresa">
+        <button class="nav-item" type="button" disabled aria-label="Logística, em breve"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h11v10H3zM14 10h4l3 3v4h-7z"/><circle cx="7.5" cy="18" r="1.7"/><circle cx="18" cy="18" r="1.7"/></svg>Logística<span class="soon">em breve</span></button>
+        <details class="nav-dropdown" id="commercial-dropdown">
+          <summary class="nav-item nav-menu-summary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20V9l9-6 9 6v11h-6v-7h-6v7z"/><path d="M3 9h18"/></svg>Comercial<svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg></summary>
+          <div class="nav-submenu" aria-label="Áreas comerciais">
+            <a class="nav-subitem" href="?area=rede-de-clientes" data-area="rede-de-clientes">Rede de Clientes</a>
+            <a class="nav-subitem" href="?area=documentacao" data-area="documentacao">Documentação</a>
+          </div>
+        </details>
+        <button class="nav-item" type="button" disabled aria-label="Administrativo, em breve"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4m8-4v4M4 10h16M8 14h3m-3 3h7"/></svg>Administrativo<span class="soon">em breve</span></button>
+        <button class="nav-item" type="button" disabled aria-label="Produção, em breve"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V9l6 3V9l6 3V5h6v16z"/><path d="M7 17h2m3 0h2m3 0h2m-2-8h2"/></svg>Produção<span class="soon">em breve</span></button>
+        <button class="nav-item" type="button" disabled aria-label="Instalação, em breve"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m14 7 3-3 3 3-3 3M4 20l10-10m-5 0 5 5m-9-9 3-3 4 4-3 3z"/></svg>Instalação<span class="soon">em breve</span></button>
+      </nav>
+      <div class="sidebar-bottom"><strong>GOD Sistemas de Proteções</strong>Gestão comercial</div>
+    </aside>
+
+  <!-- Area comercial: busca, status e gestao dos clientes. -->
+    <main class="main">
+      <div class="topbar"><div class="top-label"><span class="status-dot"></span>Área comercial</div></div>
+      <div class="content">
+        <header class="page-heading">
+          
+          <!-- Titulo da area e atalho para cadastrar uma obra. -->
+          <div><h1 id="page-title">Rede de Clientes</h1></div>
+          <label class="search-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg><input class="search" id="search" type="search" placeholder="Buscar cliente, obra ou CNPJ" aria-label="Buscar cliente, obra ou CNPJ"></label>
+        </header>
+
+        <section id="client-section" aria-label="Lista de clientes">
+          <!-- Busca, filtros de status e tabela de clientes. -->
+          <div class="client-toolbar" id="client-toolbar">
+            <div class="status-dropdown" id="status-dropdown">
+              <button class="status-menu-toggle" id="status-menu-toggle" type="button" aria-label="Filtrar clientes por status" aria-haspopup="menu" aria-expanded="false" aria-controls="status-menu">
+                <span id="status-current-label">Todos</span>
+                <span class="status-count" id="selected-status-count">0</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
+              </button>
+              <div class="status-menu" id="status-menu" role="menu" aria-label="Status dos clientes" hidden></div>
+            </div>
+            <button class="button button-primary" id="add-client" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span id="add-client-label">Novo cliente</span></button>
+          </div>
+          <div class="table-shell">
+            <div class="table-scroll">
+              <table>
+                <thead id="client-table-head"><tr><th>Construtora / obra</th><th>Razão social / CNPJ</th><th>Endereço da obra</th><th>Tempo de obra</th><th>Data início</th><th>Data término</th><th>Situação da obra</th><th><span class="sr-only">Ações</span></th></tr></thead>
+                <tbody id="client-rows"></tbody>
+              </table>
+            </div>
+            <div class="empty" id="empty-state">
+              <div class="empty-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20V9l9-6 9 6v11h-6v-7h-6v7z"/><path d="M3 9h18"/></svg></div>
+              <h3 id="empty-title">Nenhum cliente cadastrado</h3>
+              <p id="empty-description">Cadastre uma construtora e sua primeira obra para começar.</p>
+              <button class="button button-primary" id="empty-add" type="button">Cadastrar primeiro cliente</button>
+            </div>
+            <div class="table-footer" id="table-footer">Os dados ficam salvos neste navegador.</div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <dialog class="dialog" id="client-dialog" aria-labelledby="dialog-title">
+
+    <!-- Formulario usado para criar, editar ou excluir um cliente. -->
+    <form id="client-form">
+      <div class="dialog-head">
+        <div><h2 id="dialog-title">Novo cliente</h2><p>Informe os dados da construtora e da obra.</p></div>
+        <button class="icon-button" id="close-dialog" type="button" aria-label="Fechar formulário"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+      </div>
+      <div class="dialog-body">
+        <div class="form-sections">
+          <details class="form-section" open>
+            <summary>Informações Gerais</summary>
+            <div class="form-section-body form-grid">
+              <div class="field"><label for="company">Construtora</label><input id="company" name="company" autocomplete="organization" placeholder="Nome da construtora" required></div>
+              <div class="field"><label for="project">Obra</label><input id="project" name="project" placeholder="Nome ou identificação da obra" required></div>
+              <div class="field full"><label for="address">Endereço da obra</label><input id="address" name="address" autocomplete="street-address" placeholder="Rua, número, bairro, cidade / UF" required></div>
+              <div class="field full"><label for="legalName">Razão social</label><input id="legalName" name="legalName" autocomplete="organization" placeholder="Razão social da empresa" required></div>
+              <div class="field"><label for="cnpj">CNPJ</label><input id="cnpj" name="cnpj" inputmode="numeric" autocomplete="off" placeholder="00.000.000/0000-00" maxlength="18" required></div>
+              <div class="field full"><label for="workStatus">Situação da obra</label><select id="workStatus" name="workStatus" required><option value="Não iniciada">Não iniciada</option><option value="Em andamento">Em andamento</option><option value="Concluída">Concluída</option></select></div>
+            </div>
+          </details>
+          <details class="form-section">
+            <summary>Financeiro</summary>
+            <div class="form-section-body form-grid">
+              <div class="field full"><label for="invoiceDueDate">Vencimento de fatura</label><select id="invoiceDueDate" name="invoiceDueDate"><option value="">Selecione o dia de vencimento</option><option value="last-day">Último dia do mês</option><option value="1">Dia 1</option><option value="2">Dia 2</option><option value="3">Dia 3</option><option value="4">Dia 4</option><option value="5">Dia 5</option><option value="6">Dia 6</option><option value="7">Dia 7</option><option value="8">Dia 8</option><option value="9">Dia 9</option><option value="10">Dia 10</option><option value="11">Dia 11</option><option value="12">Dia 12</option><option value="13">Dia 13</option><option value="14">Dia 14</option><option value="15">Dia 15</option><option value="16">Dia 16</option><option value="17">Dia 17</option><option value="18">Dia 18</option><option value="19">Dia 19</option><option value="20">Dia 20</option><option value="21">Dia 21</option><option value="22">Dia 22</option><option value="23">Dia 23</option><option value="24">Dia 24</option><option value="25">Dia 25</option><option value="26">Dia 26</option><option value="27">Dia 27</option><option value="28">Dia 28</option><option value="29">Dia 29</option><option value="30">Dia 30</option><option value="31">Dia 31</option></select></div>
+            </div>
+          </details>
+          <details class="form-section">
+            <summary>Funcionamento da Obra</summary>
+            <div class="form-section-body form-grid">
+              <div class="field full"><span class="field-label">Dias de funcionamento</span><details class="multi-select"><summary id="working-days-label">Selecione os dias</summary><div class="multi-select-options"><label><input type="checkbox" name="workingDays" value="segunda-feira"> Segunda-feira</label><label><input type="checkbox" name="workingDays" value="terça-feira"> Terça-feira</label><label><input type="checkbox" name="workingDays" value="quarta-feira"> Quarta-feira</label><label><input type="checkbox" name="workingDays" value="quinta-feira"> Quinta-feira</label><label><input type="checkbox" name="workingDays" value="sexta-feira"> Sexta-feira</label><label><input type="checkbox" name="workingDays" value="sábado"> Sábado</label><label><input type="checkbox" name="workingDays" value="domingo"> Domingo</label></div></details></div>
+              <div class="field"><label for="workStartTime">Horário de início</label><select id="workStartTime" name="workStartTime"><option value="">Selecione</option><option value="07:00">7 horas da manhã</option><option value="08:00">8 horas da manhã</option><option value="09:00">9 horas da manhã</option><option value="10:00">10 horas da manhã</option><option value="11:00">11 horas da manhã</option><option value="12:00">12 horas</option><option value="13:00">13 horas</option><option value="14:00">14 horas</option><option value="15:00">15 horas</option><option value="16:00">16 horas</option><option value="17:00">17 horas</option><option value="18:00">18 horas</option><option value="19:00">19 horas</option></select></div>
+              <div class="field"><label for="workEndTime">Horário de término</label><select id="workEndTime" name="workEndTime"><option value="">Selecione</option><option value="07:00">7 horas da manhã</option><option value="08:00">8 horas da manhã</option><option value="09:00">9 horas da manhã</option><option value="10:00">10 horas da manhã</option><option value="11:00">11 horas da manhã</option><option value="12:00">12 horas</option><option value="13:00">13 horas</option><option value="14:00">14 horas</option><option value="15:00">15 horas</option><option value="16:00">16 horas</option><option value="17:00">17 horas</option><option value="18:00">18 horas</option><option value="19:00">19 horas</option></select></div>
+            </div>
+          </details>
+          <details class="form-section">
+            <summary>Operacional</summary>
+            <div class="form-section-body form-grid">
+              <div class="field"><label for="plannedStartDate">Início Previsto</label><input id="plannedStartDate" name="plannedStartDate" type="date"></div>
+              <div class="field"><label for="startDate">Início</label><input id="startDate" name="startDate" type="date"></div>
+              <div class="field"><label for="plannedEndDate">Término previsto</label><input id="plannedEndDate" name="plannedEndDate" type="date"></div>
+              <div class="field"><label for="actualEndDate">Término efetivo</label><input id="actualEndDate" name="actualEndDate" type="date"></div>
+              <div class="field"><label for="duration">Tempo de obra</label><input id="duration" type="text" readonly aria-live="polite" value="Não iniciada"></div>
+              <div class="field"><label for="quantityOnSite">Quantidade em Obra</label><input id="quantityOnSite" name="quantityOnSite" placeholder="Informe a quantidade"></div>
+              <div class="field"><label for="recessKit">Kit Recuo</label><select id="recessKit" name="recessKit"><option value="">Selecione</option><option value="Sim">Sim</option><option value="Não">Não</option></select></div>
+              <div class="field"><label for="plannedDurationMonths">Prazo previsto (meses)</label><input id="plannedDurationMonths" type="text" readonly aria-live="polite" value="—"></div>
+              <div class="field full"><span class="field-label">Ativo?</span><label class="active-indicator" for="activeClient"><input id="activeClient" type="checkbox" aria-label="Ativo?" disabled><span id="activeClientLabel"></span></label></div>
+            </div>
+          </details>
+          <details class="form-section"><summary>Documentação da Obra</summary><div class="form-section-body form-grid"><div class="field full"><label for="documentationStatus">Etapa do processo</label><select id="documentationStatus" name="documentationStatus" required><option value="Pendente">Pendente</option><option value="Pendente em Contrato">Pendente em Contrato</option><option value="Pendente em contrato e Ficha Cadastral">Pendente em contrato e Ficha Cadastral</option><option value="Pendente em Proposta e Contrato">Pendente em Proposta e Contrato</option><option value="Completa">Completa</option></select></div></div></details>
+          <details class="form-section"><summary>Comercial</summary><div class="form-section-body"><p class="form-section-placeholder">Nenhuma informação cadastrada.</p></div></details>
+        </div>
+      </div>
+      <div class="dialog-actions">
+        <button class="button button-danger" id="delete-client" type="button" hidden>Excluir cliente</button>
+        <div class="actions-end"><button class="button button-quiet" id="cancel-dialog" type="button">Cancelar</button><button class="button button-primary" type="submit" id="save-client">Salvar cliente</button></div>
+      </div>
+    </form>
+  </dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  
+    <!-- Mensagens curtas de confirmacao das acoes. -->
+    <script src="app.js" type="module"></script>
+    
+</body>
+</html>

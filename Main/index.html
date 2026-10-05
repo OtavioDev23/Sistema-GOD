@@ -32,17 +32,29 @@
             <a class="nav-subitem" href="?area=documentacao" data-area="documentacao">Documentação</a>
           </div>
         </details>
-        <button class="nav-item" type="button" disabled aria-label="Administrativo, em breve"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4m8-4v4M4 10h16M8 14h3m-3 3h7"/></svg>Administrativo<span class="soon">em breve</span></button>
+        <details class="nav-dropdown" id="administrative-dropdown">
+          <summary class="nav-item nav-menu-summary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4m8-4v4M4 10h16M8 14h3m-3 3h7"/></svg>Administrativo<svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg></summary>
+          <div class="nav-submenu" aria-label="Áreas administrativas">
+            <a class="nav-subitem" href="?area=departamento-pessoal" data-area="departamento-pessoal">Departamento Pessoal</a>
+            <details class="nav-nested-dropdown">
+              <summary class="nav-subitem nav-nested-summary">Financeiro<svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg></summary>
+              <div class="nav-nested-submenu">
+                <a class="nav-subitem" href="?area=financeiro-despesas" data-area="financeiro-despesas">Despesas</a>
+                <a class="nav-subitem" href="?area=financeiro-receitas" data-area="financeiro-receitas">Receitas</a>
+              </div>
+            </details>
+          </div>
+        </details>
         <button class="nav-item" type="button" disabled aria-label="Produção, em breve"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V9l6 3V9l6 3V5h6v16z"/><path d="M7 17h2m3 0h2m3 0h2m-2-8h2"/></svg>Produção<span class="soon">em breve</span></button>
         <button class="nav-item" type="button" disabled aria-label="Instalação, em breve"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m14 7 3-3 3 3-3 3M4 20l10-10m-5 0 5 5m-9-9 3-3 4 4-3 3z"/></svg>Instalação<span class="soon">em breve</span></button>
       </nav>
-      <div class="sidebar-bottom"><strong>GOD Sistemas de Proteções</strong>Gestão comercial</div>
+      <div class="sidebar-bottom"><a class="settings-link" href="?area=configuracoes" data-area="configuracoes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path d="m19.4 15 .1.1 1.1.9-1.4 2.4-1.4-.5a7.7 7.7 0 0 1-1.4.8l-.3 1.5h-2.8l-.3-1.5a7.7 7.7 0 0 1-1.4-.8l-1.4.5-1.4-2.4 1.1-.9a7.7 7.7 0 0 1 0-1.6l-1.1-.9 1.4-2.4 1.4.5a7.7 7.7 0 0 1 1.4-.8l.3-1.5h2.8l.3 1.5a7.7 7.7 0 0 1 1.4.8l1.4-.5 1.4 2.4-1.1.9a7.7 7.7 0 0 1-.1 1.5Z"/></svg>Configurações</a><strong>GOD Sistemas de Proteções</strong>Gestão comercial</div>
     </aside>
 
   <!-- Area comercial: busca, status e gestao dos clientes. -->
     <main class="main">
-      <div class="topbar"><div class="top-label"><span class="status-dot"></span>Área comercial</div></div>
-      <div class="content">
+      <div class="topbar"><div class="top-label" id="top-label"><span class="status-dot"></span>Área comercial</div></div>
+      <div class="content" id="client-content">
         <header class="page-heading">
           
           <!-- Titulo da area e atalho para cadastrar uma obra. -->
@@ -80,8 +92,101 @@
           </div>
         </section>
       </div>
+      <section class="settings-page alternate-page" id="settings-page" hidden aria-labelledby="settings-title">
+        <header class="alternate-heading">
+          <p class="eyebrow">Configurações</p>
+          <h1 id="settings-title">Preferências</h1>
+          <p class="subtitle">Escolha Aparência e Comportamento.</p>
+        </header>
+        <section class="preferences-card" aria-labelledby="appearance-title">
+          <div class="preferences-heading"><span class="preferences-icon" aria-hidden="true">◐</span><div><h2 id="appearance-title">Aparência</h2><p>Personalize a aparência do sistema.</p></div></div>
+          <div class="preference-row">
+            <div class="preference-copy"><label for="theme-preference">Tema para este dispositivo</label><p>Escolha como o sistema será exibido.</p></div>
+            <select id="theme-preference" name="theme"><option value="system">Usar configuração do sistema</option><option value="light">Claro</option><option value="dark">Escuro</option></select>
+          </div>
+        </section>
+        <section class="preferences-card" aria-labelledby="language-title">
+          <div class="preferences-heading"><span class="preferences-icon" aria-hidden="true">文</span><div><h2 id="language-title">Idioma e horário</h2><p>Defina o idioma e o fuso horário usados neste dispositivo.</p></div></div>
+          <div class="preference-row">
+            <div class="preference-copy"><label for="language-preference">Idioma</label><p>Escolha o idioma em que você deseja usar o sistema.</p></div>
+            <select id="language-preference" name="language"><option value="pt-BR">Português (Brasil)</option><option value="en-US">English (United States)</option><option value="es">Español</option></select>
+          </div>
+          <div class="preference-row">
+            <div class="preference-copy"><label for="timezone-preference">Fuso horário</label><p>Escolha o horário usado para exibir datas e horários.</p></div>
+            <select id="timezone-preference" name="timezone"><option value="local">Usar fuso horário do dispositivo</option><option value="America/Sao_Paulo">Brasília (GMT−3)</option><option value="UTC">UTC</option></select>
+          </div>
+        </section>
+        <p class="settings-feedback" id="settings-feedback" role="status" aria-live="polite"></p>
+      </section>
+
+      <section class="personnel-page alternate-page" id="personnel-page" hidden aria-labelledby="personnel-title">
+        <div class="personnel-content">
+          <header class="personnel-heading alternate-heading">
+            <div><p class="eyebrow">Administrativo · Departamento Pessoal</p><h1 id="personnel-title">Colaboradores</h1><p class="subtitle">Cadastre e organize as informações dos colaboradores.</p></div>
+            <button class="button button-primary" id="add-employee" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Novo colaborador</button>
+          </header>
+          <section class="employee-board" aria-label="Visualizações de colaboradores">
+            <div class="employee-board-toolbar"><div class="employee-tabs" role="tablist" aria-label="Visualizações de colaboradores"><button class="employee-tab active" type="button" role="tab" aria-selected="true" data-employee-view="gallery">▦ <span>Galeria de Funcionários</span></button><button class="employee-tab" type="button" role="tab" aria-selected="false" data-employee-view="contracts">▤ <span>Contrato</span></button><button class="employee-tab" type="button" role="tab" aria-selected="false" data-employee-view="departments">▦ <span>Departamentos</span></button><button class="employee-tab" type="button" role="tab" aria-selected="false" data-employee-view="functions">▦ <span>Funções</span></button></div></div>
+            <div class="employee-grid" id="employee-grid"></div>
+            <div class="employee-empty" id="employee-empty" hidden><h3>Nenhum colaborador cadastrado</h3><p>Use o botão Novo colaborador para adicionar alguém à equipe.</p></div>
+            <p class="employee-feedback" id="employee-feedback" role="status" aria-live="polite"></p>
+          </section>
+        </div>
+      </section>
+
+      <section class="finance-page alternate-page" id="finance-page" hidden aria-labelledby="finance-title">
+        <header class="alternate-heading"><p class="eyebrow">Administrativo · Financeiro</p><h1 id="finance-title">Financeiro</h1><p class="subtitle" id="finance-description"></p></header>
+        <section class="finance-empty"><span class="finance-empty-icon" aria-hidden="true">$</span><h2 id="finance-empty-title"></h2><p>Esta área está pronta para receber seus lançamentos.</p></section>
+      </section>
     </main>
   </div>
+
+  <dialog class="dialog employee-dialog" id="employee-dialog" aria-labelledby="employee-dialog-title">
+    <form id="employee-form">
+      <div class="dialog-head"><div><h2 id="employee-dialog-title">Novo colaborador</h2><p>Preencha os dados do colaborador.</p></div><button class="icon-button" id="close-employee-dialog" type="button" aria-label="Fechar formulário"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+      <div class="dialog-body">
+        <div class="form-sections">
+          <details class="form-section" open>
+            <summary>Dados pessoais</summary>
+            <div class="form-section-body form-grid">
+              <div class="field full"><label for="employee-name">Nome completo</label><input id="employee-name" name="name" required autocomplete="name" placeholder="Nome do colaborador"></div>
+              <div class="field"><label for="employee-cpf">CPF</label><input id="employee-cpf" name="cpf" inputmode="numeric" maxlength="14" autocomplete="off"></div>
+              <div class="field"><label for="employee-birth-date">Data de Nascimento</label><input id="employee-birth-date" name="birthDate" type="date"></div>
+              <div class="field"><label for="employee-birthday">Aniversário</label><input id="employee-birthday" type="date" readonly title="Calculado para o ano atual a partir da data de nascimento"></div>
+              <div class="field full"><label for="employee-address">Endereço</label><input id="employee-address" name="address" autocomplete="street-address"></div>
+              <div class="field"><label for="employee-email">E-mail</label><input id="employee-email" name="email" type="email" autocomplete="email"></div>
+              <div class="field"><label for="employee-pix">Chave PIX</label><input id="employee-pix" name="pix" autocomplete="off"></div>
+              <div class="field"><label for="employee-pis">PIS</label><input id="employee-pis" name="pis" inputmode="numeric"></div>
+              <div class="field full"><span class="field-label">Foto do colaborador</span><div class="employee-photo-control"><img id="employee-photo-preview" alt="Prévia da foto do colaborador" hidden><span id="employee-photo-empty" aria-hidden="true">Sem foto</span><div class="employee-photo-actions"><label class="employee-photo-upload" for="employee-photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m-4 4 4-4 4 4M5 14v5h14v-5"/></svg><span>Escolher foto</span><input id="employee-photo" type="file" accept="image/*" aria-label="Escolher foto do colaborador"></label><span class="employee-photo-filename" id="employee-photo-filename">JPG, PNG ou outro formato de imagem (até 10 MB)</span></div></div></div>
+            </div>
+          </details>
+          <details class="form-section" open>
+            <summary>Informações profissionais</summary>
+            <div class="form-section-body form-grid">
+              <div class="field"><label for="employee-department">Departamento</label><input id="employee-department" name="department" required placeholder="Ex.: Produção"></div>
+              <div class="field"><label for="employee-contract">Tipo de Contrato</label><select id="employee-contract" name="contract"><option value="">Selecione</option><option>CLT</option><option>Aprendiz</option><option>Freelancer/Autônomo</option><option>Contrato Social</option></select></div>
+              <div class="field"><label for="employee-registration-number">N° de Matrícula</label><input id="employee-registration-number" name="registrationNumber"></div>
+              <div class="field"><label for="employee-admission-date">Data de Admissão</label><input id="employee-admission-date" name="admissionDate" type="date"></div>
+              <div class="field"><label for="employee-registration-time">Tempo de Registro</label><input id="employee-registration-time" type="text" readonly value="Sem data de admissão"></div>
+              <div class="field"><label for="employee-base-salary">Salário Base</label><input id="employee-base-salary" name="baseSalary" inputmode="decimal"></div>
+              <div class="field"><label for="employee-function">Cargo/Função</label><select id="employee-function" name="jobFunction" required><option value="">Selecione</option><option>Auxiliar Comercial</option><option>Vistoriador Junior</option><option>Auxiliar de Motorista</option><option>Auxiliar de Montagem</option><option>Assistente Financeira</option><option>Lider de Produção</option><option>Soldador</option><option>Sócio</option><option>Jovem aprendiz</option><option>Pintor</option><option>Motorista</option><option>Auxiliar de Produção</option><option>Auxiliar Administrativo</option><option>Montador III</option><option>Auxiliar de Limpeza</option></select></div>
+              <div class="field"><label for="employee-status">Situação</label><select id="employee-status" name="active"><option value="true">Ativo</option><option value="false">Inativo</option></select></div>
+            </div>
+          </details>
+          <details class="form-section" open>
+            <summary>Informações adicionais</summary>
+            <div class="form-section-body form-grid">
+              <div class="field"><label for="employee-pants-size">N° Calça</label><input id="employee-pants-size" name="pantsSize"></div>
+              <div class="field"><label for="employee-shirt-size">N° Camisa</label><input id="employee-shirt-size" name="shirtSize"></div>
+              <div class="field"><label for="employee-shoe-size">N° Calçado</label><input id="employee-shoe-size" name="shoeSize"></div>
+            </div>
+          </details>
+        </div>
+      </div>
+      <p class="employee-feedback" id="employee-form-feedback" role="status" aria-live="polite"></p>
+      <div class="dialog-actions"><div class="actions-end"><button class="button button-quiet" id="cancel-employee-dialog" type="button">Cancelar</button><button class="button button-primary" type="submit">Salvar colaborador</button></div></div>
+    </form>
+  </dialog>
 
   <dialog class="dialog" id="client-dialog" aria-labelledby="dialog-title">
 

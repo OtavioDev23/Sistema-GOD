@@ -1,7 +1,14 @@
   // A area selecionada define os textos e a lista local de cadastros.
-    const currentArea = new URLSearchParams(window.location.search).get("area") === "documentacao" ? "documentacao" : "rede-de-clientes";
+    const requestedArea = new URLSearchParams(window.location.search).get("area") || "rede-de-clientes";
+    const currentArea = requestedArea;
     const isDocumentationArea = currentArea === "documentacao";
+    const isSettingsArea = currentArea === "configuracoes";
+    const isPersonnelArea = currentArea === "departamento-pessoal";
+    const isFinanceArea = currentArea === "financeiro-despesas" || currentArea === "financeiro-receitas";
+    const isAlternateArea = isSettingsArea || isPersonnelArea || isFinanceArea;
     const storageKey = "god-sistemas-clientes-v1";
+    const employeesStorageKey = "god-sistemas-colaboradores-v1";
+    const preferencesStorageKey = "god-sistemas-preferencias-v1";
     const documentationDatabaseName = "god-sistemas-documentos-v1";
     const documentationStoreName = "files";
     const dialog = document.querySelector("#client-dialog");
@@ -28,6 +35,10 @@
     let documentationFiles = new Map();
     let pendingCommercialFiles = new Map();
     let editingId = null;
+    let editingEmployeeId = null;
+    let activeEmployeeView = "gallery";
+    let employeePhotoPreviewUrl = null;
+    const employeePhotoUrls = new Map();
     let activeStatus = isDocumentationArea ? "Todas as etapas" : "Todas";
     let toastTimer;
     let documentationFilesReady = Promise.resolve();
@@ -95,6 +106,24 @@
       document.querySelector("#commercial-documentation-status").textContent = getDocumentationStatus(client || { id: "" });
     }
 
+    const areaLabels = {
+      "rede-de-clientes": "Área comercial",
+      documentacao: "Área comercial",
+      configuracoes: "Preferências",
+      "departamento-pessoal": "Departamento Pessoal",
+      "financeiro-despesas": "Financeiro · Despesas",
+      "financeiro-receitas": "Financeiro · Receitas"
+    };
+    document.querySelector("#top-label").lastChild.textContent = areaLabels[currentArea] || areaLabels["rede-de-clientes"];
+    document.querySelector("#client-content").hidden = isAlternateArea;
+    document.querySelector("#settings-page").hidden = !isSettingsArea;
+    document.querySelector("#personnel-page").hidden = !isPersonnelArea;
+    document.querySelector("#finance-page").hidden = !isFinanceArea;
+    document.querySelector("#client-dialog").hidden = isAlternateArea;
+    document.querySelector("#employee-dialog").hidden = !isPersonnelArea;
+    document.querySelector("#settings-page").classList.toggle("alternate-page-active", isSettingsArea);
+    document.querySelector("#personnel-page").classList.toggle("alternate-page-active", isPersonnelArea);
+    document.querySelector("#finance-page").classList.toggle("alternate-page-active", isFinanceArea);
     document.querySelector("#page-title").textContent = isDocumentationArea ? "Documentação" : "Rede de Clientes";
     document.querySelector("#add-client-label").textContent = isDocumentationArea ? "Novo registro" : "Novo cliente";
     document.querySelector("#empty-add").textContent = isDocumentationArea ? "Cadastrar primeiro registro" : "Cadastrar primeiro cliente";
@@ -109,14 +138,222 @@
       document.querySelector("table").classList.add("documentation-table");
       tableHead.innerHTML = "<tr><th>Construtora / obra</th><th>Etapa do processo</th><th>Proposta</th><th>Contrato</th><th>Ficha Cadastral</th><th>Tempo de Obra</th></tr>";
     }
-    document.querySelector("#commercial-dropdown").open = isDocumentationArea;
-    document.querySelectorAll(".nav-subitem").forEach((link) => {
+    document.querySelector("#commercial-dropdown").open = isDocumentationArea || currentArea === "rede-de-clientes";
+    document.querySelector("#administrative-dropdown").open = isPersonnelArea || isFinanceArea;
+    document.querySelectorAll(".nav-subitem, .settings-link").forEach((link) => {
       if (link.dataset.area === currentArea) {
         link.classList.add("active");
         link.setAttribute("aria-current", "page");
       }
     });
-    document.title = `${isDocumentationArea ? "Documentação" : "Rede de Clientes"} | GOD Sistemas de Proteções`;
+    document.querySelector(".nav-nested-dropdown").open = isFinanceArea;
+    document.title = `${isSettingsArea ? "Preferências" : isPersonnelArea ? "Departamento Pessoal" : isFinanceArea ? "Financeiro" : isDocumentationArea ? "Documentação" : "Rede de Clientes"} | GOD Sistemas de Proteções`;
+    if (isFinanceArea) {
+      const financeTitle = currentArea === "financeiro-despesas" ? "Despesas" : "Receitas";
+      document.querySelector("#finance-title").textContent = financeTitle;
+      document.querySelector("#finance-description").textContent = `Acompanhe os lançamentos de ${financeTitle.toLocaleLowerCase("pt-BR")}.`;
+      document.querySelector("#finance-empty-title").textContent = `Nenhuma ${financeTitle.toLocaleLowerCase("pt-BR").replace(/s$/, "")} cadastrada`;
+    }
+
+    function loadPreferences() {
+      try {
+        const stored = JSON.parse(localStorage.getItem(preferencesStorageKey) || "{}");
+        return {
+          theme: ["system", "light", "dark"].includes(stored.theme) ? stored.theme : "light",
+          language: ["pt-BR", "en-US", "es"].includes(stored.language) ? stored.language : "pt-BR",
+          timezone: ["local", "America/Sao_Paulo", "UTC"].includes(stored.timezone) ? stored.timezone : "local"
+        };
+      } catch {
+        return { theme: "light", language: "pt-BR", timezone: "local" };
+      }
+    }
+
+    let preferences = loadPreferences();
+
+    function applyTheme(theme) {
+      document.documentElement.dataset.theme = theme;
+      document.documentElement.style.colorScheme = theme === "system" ? "light dark" : theme;
+    }
+
+    function savePreferences() {
+      localStorage.setItem(preferencesStorageKey, JSON.stringify(preferences));
+      applyTheme(preferences.theme);
+      document.documentElement.lang = preferences.language;
+      document.querySelector("#settings-feedback").textContent = "Preferências salvas neste dispositivo.";
+    }
+
+    applyTheme(preferences.theme);
+    document.documentElement.lang = preferences.language;
+    if (isSettingsArea) {
+      document.querySelector("#theme-preference").value = preferences.theme;
+      document.querySelector("#language-preference").value = preferences.language;
+      document.querySelector("#timezone-preference").value = preferences.timezone;
+    }
+
+    function loadEmployees() {
+      try {
+        const stored = JSON.parse(localStorage.getItem(employeesStorageKey) || "[]");
+        return Array.isArray(stored) ? stored.filter((employee) => employee && typeof employee.id === "string" && typeof employee.name === "string") : [];
+      } catch {
+        return [];
+      }
+    }
+
+    let employees = loadEmployees();
+
+    function saveEmployees() {
+      localStorage.setItem(employeesStorageKey, JSON.stringify(employees));
+    }
+
+    function parseEmployeeDate(value) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(value || "")) return null;
+      const [year, month, day] = value.split("-").map(Number);
+      const date = new Date(year, month - 1, day);
+      return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day ? date : null;
+    }
+
+    function addEmployeeMonths(date, months) {
+      const target = new Date(date.getFullYear(), date.getMonth() + months, 1);
+      const lastDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
+      target.setDate(Math.min(date.getDate(), lastDay));
+      return target;
+    }
+
+    function formatEmployeeRegistrationTime(value) {
+      if (!value) return "Sem data de admissão";
+      const admissionDate = parseEmployeeDate(value);
+      if (!admissionDate) return "Data de admissão inválida";
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (admissionDate > today) return "Data de admissão futura";
+
+      let years = today.getFullYear() - admissionDate.getFullYear();
+      let anniversary = addEmployeeMonths(admissionDate, years * 12);
+      if (anniversary > today) {
+        years -= 1;
+        anniversary = addEmployeeMonths(admissionDate, years * 12);
+      }
+
+      let months = (today.getFullYear() - anniversary.getFullYear()) * 12 + today.getMonth() - anniversary.getMonth();
+      let elapsedMonths = addEmployeeMonths(admissionDate, years * 12 + months);
+      if (elapsedMonths > today) {
+        months -= 1;
+        elapsedMonths = addEmployeeMonths(admissionDate, years * 12 + months);
+      }
+      const utcToday = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+      const utcElapsedMonths = Date.UTC(elapsedMonths.getFullYear(), elapsedMonths.getMonth(), elapsedMonths.getDate());
+      const days = Math.floor((utcToday - utcElapsedMonths) / 86400000);
+      return `${years} ${years === 1 ? "ano" : "anos"}, ${months} ${months === 1 ? "mês" : "meses"}, ${days} ${days === 1 ? "dia" : "dias"}`;
+    }
+
+    function getEmployeeBirthday(value) {
+      const birthDate = parseEmployeeDate(value);
+      if (!birthDate) return "";
+      const year = new Date().getFullYear();
+      const month = birthDate.getMonth();
+      const day = Math.min(birthDate.getDate(), new Date(year, month + 1, 0).getDate());
+      return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    }
+
+    function updateEmployeeComputedFields() {
+      const employeeForm = document.querySelector("#employee-form");
+      document.querySelector("#employee-registration-time").value = formatEmployeeRegistrationTime(employeeForm.elements.admissionDate.value);
+      document.querySelector("#employee-birthday").value = getEmployeeBirthday(employeeForm.elements.birthDate.value);
+    }
+
+    function getEmployeePhotoKey(employeeId) {
+      return `employee:${employeeId}:photo`;
+    }
+
+    function getEmployeePhotoUrl(employeeId) {
+      const key = getEmployeePhotoKey(employeeId);
+      const photo = documentationFiles.get(key);
+      if (!photo?.blob) return "";
+      if (!employeePhotoUrls.has(key)) employeePhotoUrls.set(key, URL.createObjectURL(photo.blob));
+      return employeePhotoUrls.get(key);
+    }
+
+    function updateEmployeePhotoPreview(file = null) {
+      if (employeePhotoPreviewUrl) URL.revokeObjectURL(employeePhotoPreviewUrl);
+      employeePhotoPreviewUrl = file ? URL.createObjectURL(file) : null;
+      const preview = document.querySelector("#employee-photo-preview");
+      const empty = document.querySelector("#employee-photo-empty");
+      const savedPhoto = editingEmployeeId && documentationFiles.get(getEmployeePhotoKey(editingEmployeeId));
+      const photoUrl = employeePhotoPreviewUrl || (savedPhoto && getEmployeePhotoUrl(editingEmployeeId));
+      preview.hidden = !photoUrl;
+      preview.removeAttribute("src");
+      if (photoUrl) preview.src = photoUrl;
+      empty.hidden = Boolean(photoUrl);
+      document.querySelector("#employee-photo-filename").textContent = file?.name || savedPhoto?.name || "JPG, PNG ou outro formato de imagem (até 10 MB)";
+    }
+
+    async function saveEmployeePhoto(employeeId, file) {
+      const database = await openDocumentationDatabase();
+      const record = { key: getEmployeePhotoKey(employeeId), employeeId, type: "employee-photo", name: file.name, blob: file, updatedAt: Date.now() };
+      try {
+        await new Promise((resolve, reject) => {
+          const transaction = database.transaction(documentationStoreName, "readwrite");
+          transaction.objectStore(documentationStoreName).put(record);
+          transaction.oncomplete = resolve;
+          transaction.onerror = () => reject(transaction.error);
+          transaction.onabort = () => reject(transaction.error);
+        });
+      } finally {
+        database.close();
+      }
+      const oldUrl = employeePhotoUrls.get(record.key);
+      if (oldUrl) URL.revokeObjectURL(oldUrl);
+      employeePhotoUrls.delete(record.key);
+      documentationFiles.set(record.key, record);
+    }
+
+    function renderEmployeeCards(group) {
+      return group.map((employee) => {
+        const photoUrl = getEmployeePhotoUrl(employee.id);
+        const avatar = photoUrl
+          ? `<img src="${escapeHtml(photoUrl)}" alt="Foto de ${escapeHtml(employee.name)}">`
+          : escapeHtml(employee.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toLocaleUpperCase("pt-BR"));
+        return `
+          <article class="employee-card">
+            <div class="employee-avatar ${photoUrl ? "has-photo" : ""}">${avatar}</div>
+            <div class="employee-card-body"><h3>${escapeHtml(employee.name)}</h3><span class="employee-tag">${escapeHtml(employee.department)}</span><span class="employee-tag employee-tag-function">${escapeHtml(employee.jobFunction)}</span><span class="employee-active ${employee.active ? "is-active" : "is-inactive"}"><span></span>${employee.active ? "Ativo" : "Inativo"}</span>
+              <div class="employee-card-actions"><span>${escapeHtml(employee.contract || "Contrato não informado")}</span><button type="button" class="employee-edit" data-employee-id="${escapeHtml(employee.id)}">Editar</button></div>
+            </div>
+          </article>`;
+      }).join("");
+    }
+
+    function renderEmployees() {
+      const grid = document.querySelector("#employee-grid");
+      const empty = document.querySelector("#employee-empty");
+      if (activeEmployeeView === "departments" || activeEmployeeView === "functions") {
+        const property = activeEmployeeView === "departments" ? "department" : "jobFunction";
+        const groupedEmployees = employees.reduce((groups, employee) => {
+              const groupName = employee[property] || "Sem classificação";
+              groups.set(groupName, [...(groups.get(groupName) || []), employee]);
+              return groups;
+            }, new Map());
+        grid.innerHTML = [...groupedEmployees.entries()].map(([name, group]) => `
+          <article class="employee-group-card"><span class="employee-group-count">${group.length}</span><h3>${escapeHtml(name)}</h3><p>${group.length} ${group.length === 1 ? "colaborador" : "colaboradores"}</p></article>`).join("");
+        empty.hidden = groupedEmployees.size > 0;
+      } else if (activeEmployeeView === "contracts") {
+        const contracts = [
+          { name: "CLT", matches: ["clt"] },
+          { name: "Contrato Social", matches: ["contrato social"] },
+          { name: "Freelancer/Autônomo", matches: ["freelancer/autônomo", "freelancer/autonomo"] }
+        ];
+        grid.innerHTML = contracts.map((contract) => {
+          const group = employees.filter((employee) => contract.matches.includes(String(employee.contract || "").trim().toLocaleLowerCase("pt-BR")));
+          return `<section class="employee-contract-group"><div class="employee-contract-heading"><h2>${escapeHtml(contract.name)}</h2><span class="employee-group-count">${group.length}</span></div><div class="employee-contract-grid">${renderEmployeeCards(group)}</div></section>`;
+        }).join("");
+        empty.hidden = employees.length > 0;
+      } else {
+        grid.innerHTML = renderEmployeeCards(employees);
+        empty.hidden = employees.length > 0;
+      }
+    }
+
+    if (isPersonnelArea) renderEmployees();
 
     function loadClients() {
       // Recupera os cadastros deste navegador; dados invalidos iniciam uma lista vazia.
@@ -150,7 +387,10 @@
 
     function formatClientDate(value) {
       const date = parseDate(value);
-      return date ? new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC" }).format(date) : "—";
+      if (!date) return "—";
+      date.setUTCHours(12);
+      const timeZone = preferences.timezone === "local" ? undefined : preferences.timezone;
+      return new Intl.DateTimeFormat(preferences.language, { timeZone }).format(date);
     }
 
     function getWholeMonthsBetween(start, end) {
@@ -611,6 +851,126 @@
       showToast(wasEditing ? "Cadastro atualizado." : isDocumentationArea ? "Registro cadastrado." : "Cliente cadastrado.");
     });
 
+    if (isSettingsArea) {
+      document.querySelector("#theme-preference").addEventListener("change", (event) => {
+        preferences.theme = event.target.value;
+        savePreferences();
+      });
+      document.querySelector("#language-preference").addEventListener("change", (event) => {
+        preferences.language = event.target.value;
+        savePreferences();
+      });
+      document.querySelector("#timezone-preference").addEventListener("change", (event) => {
+        preferences.timezone = event.target.value;
+        savePreferences();
+      });
+    }
+
+    if (isPersonnelArea) {
+      const employeeDialog = document.querySelector("#employee-dialog");
+      const employeeForm = document.querySelector("#employee-form");
+      const employeePhotoInput = document.querySelector("#employee-photo");
+      const openEmployeeForm = async (employee = null) => {
+        await documentationFilesReady;
+        editingEmployeeId = employee?.id ?? null;
+        employeeForm.querySelectorAll(".legacy-option").forEach((option) => option.remove());
+        employeeForm.reset();
+        document.querySelector("#employee-form-feedback").textContent = "";
+        employeePhotoInput.setCustomValidity("");
+        document.querySelector("#employee-dialog-title").textContent = employee ? "Editar colaborador" : "Novo colaborador";
+        if (employee) {
+          ["name", "cpf", "birthDate", "address", "email", "pix", "department", "registrationNumber", "admissionDate", "pantsSize", "shirtSize", "shoeSize", "baseSalary", "pis"].forEach((field) => {
+            employeeForm.elements.namedItem(field).value = employee[field] || "";
+          });
+          ["jobFunction", "contract"].forEach((field) => {
+            const select = employeeForm.elements.namedItem(field);
+            const value = field === "contract" ? employee.contract || "" : employee.jobFunction || "";
+            if (value && ![...select.options].some((option) => option.value === value)) {
+              const legacyOption = new Option(value, value);
+              legacyOption.className = "legacy-option";
+              select.add(legacyOption);
+            }
+            select.value = value;
+          });
+          employeeForm.elements.namedItem("active").value = String(employee.active);
+        }
+        updateEmployeeComputedFields();
+        updateEmployeePhotoPreview();
+        employeeDialog.showModal();
+        employeeForm.elements.namedItem("name").focus();
+      };
+
+      document.querySelector("#add-employee").addEventListener("click", () => openEmployeeForm());
+      employeeForm.addEventListener("input", updateEmployeeComputedFields);
+      employeeForm.addEventListener("change", updateEmployeeComputedFields);
+      employeePhotoInput.addEventListener("change", () => {
+        const file = employeePhotoInput.files[0];
+        if (file && (!file.type.startsWith("image/") || file.size > 10 * 1024 * 1024)) {
+          employeePhotoInput.setCustomValidity("Selecione uma imagem de até 10 MB.");
+          employeePhotoInput.reportValidity();
+          employeePhotoInput.setCustomValidity("");
+          employeePhotoInput.value = "";
+          return;
+        }
+        employeePhotoInput.setCustomValidity("");
+        updateEmployeePhotoPreview(file);
+      });
+      document.querySelector("#close-employee-dialog").addEventListener("click", () => employeeDialog.close());
+      document.querySelector("#cancel-employee-dialog").addEventListener("click", () => employeeDialog.close());
+      employeeDialog.addEventListener("close", () => {
+        if (employeePhotoPreviewUrl) URL.revokeObjectURL(employeePhotoPreviewUrl);
+        employeePhotoPreviewUrl = null;
+      });
+      document.querySelectorAll(".employee-tab").forEach((button) => {
+        button.addEventListener("click", () => {
+          activeEmployeeView = button.dataset.employeeView;
+          document.querySelectorAll(".employee-tab").forEach((tab) => {
+            const selected = tab === button;
+            tab.classList.toggle("active", selected);
+            tab.setAttribute("aria-selected", String(selected));
+          });
+          renderEmployees();
+        });
+      });
+      document.querySelector("#employee-grid").addEventListener("click", (event) => {
+        const button = event.target.closest(".employee-edit");
+        if (!button) return;
+        const employee = employees.find((item) => item.id === button.dataset.employeeId);
+        if (employee) openEmployeeForm(employee);
+      });
+      employeeForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (!employeeForm.reportValidity()) return;
+        const data = Object.fromEntries(new FormData(employeeForm).entries());
+        data.active = data.active === "true";
+        const employee = { id: editingEmployeeId || crypto.randomUUID(), ...data };
+        const photo = employeePhotoInput.files[0];
+        const previousEmployees = employees;
+        employees = editingEmployeeId
+          ? employees.map((item) => item.id === editingEmployeeId ? employee : item)
+          : [...employees, employee];
+        try {
+          saveEmployees();
+          if (photo) await saveEmployeePhoto(employee.id, photo);
+        } catch (error) {
+          employees = previousEmployees;
+          try {
+            saveEmployees();
+          } catch (rollbackError) {
+            console.error("Não foi possível restaurar os dados anteriores dos colaboradores.", rollbackError);
+          }
+          console.error(photo ? "Não foi possível salvar os dados e a foto do colaborador." : "Não foi possível salvar o colaborador.", error);
+          document.querySelector("#employee-form-feedback").textContent = "Não foi possível salvar os dados do colaborador neste dispositivo.";
+          return;
+        }
+        renderEmployees();
+        employeeDialog.close();
+      });
+      employeeDialog.addEventListener("click", (event) => {
+        if (event.target === employeeDialog) employeeDialog.close();
+      });
+    }
+
     document.querySelector("#delete-client").addEventListener("click", () => {
       // Exclui somente depois da confirmacao do usuario.
       const client = clients.find((item) => item.id === editingId);
@@ -629,6 +989,7 @@
     render();
     documentationFilesReady = loadDocumentationFiles().then(() => {
       render();
+      if (isPersonnelArea) renderEmployees();
       if (dialog.open) updateCommercialDocumentFields(editingId);
     }).catch((error) => {
       console.error("Não foi possível carregar os anexos.", error);

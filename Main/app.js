@@ -59,9 +59,40 @@
     }
 
     function getDocumentationStatus(client) {
-      if (documentationStatuses.includes(client.documentationStatus)) return client.documentationStatus;
-      if (documentationStatuses.includes(client.status)) return client.status;
-      return "Pendente";
+      const missingDocuments = documentTypes
+        .filter((document) => !documentationFiles.has(`${client.id}:${document.type}`)
+          && (!(client.id === editingId || !client.id) || !pendingCommercialFiles.has(document.type)))
+        .map((document) => document.label);
+      if (missingDocuments.length === 0) return "🟢 Completa";
+      if (missingDocuments.length === documentTypes.length) return "🔴 Pendente";
+      return `🟡 Pendente em ${missingDocuments.join(" e ")}`;
+    }
+
+    function updateCommercialDocumentFields(clientId) {
+      documentTypes.forEach((docInfo) => {
+        const container = document.querySelector(`#commercial-${docInfo.type}`);
+        const key = clientId ? `${clientId}:${docInfo.type}` : "";
+        const file = key ? documentationFiles.get(key) : null;
+        const name = container.querySelector(".linked-document-name");
+        const pendingFile = pendingCommercialFiles.get(docInfo.type);
+        name.replaceChildren();
+        if (pendingFile) {
+          name.textContent = pendingFile.name;
+        } else if (file) {
+          const link = document.createElement("button");
+          link.className = "document-file-name";
+          link.type = "button";
+          link.dataset.fileAction = "download";
+          link.dataset.fileKey = key;
+          link.title = `Baixar ${file.name}`;
+          link.textContent = file.name;
+          name.append(link);
+        } else {
+          name.textContent = "Sem documento anexado.";
+        }
+      });
+      const client = clients.find((item) => item.id === clientId);
+      document.querySelector("#commercial-documentation-status").textContent = getDocumentationStatus(client || { id: "" });
     }
 
     document.querySelector("#page-title").textContent = isDocumentationArea ? "Documentação" : "Rede de Clientes";
@@ -243,7 +274,21 @@
       documentationFiles.delete(key);
     }
 
+    function downloadDocumentationFile(key) {
+      const file = documentationFiles.get(key);
+      if (!file) return;
+      const downloadUrl = URL.createObjectURL(file.blob);
+      const downloadLink = document.createElement("a");
+      downloadLink.href = downloadUrl;
+      downloadLink.download = file.name;
+      downloadLink.click();
+      setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+    }
+
     function getStatusClass(status) {
+      if (status.startsWith("🟢")) return "status-completed";
+      if (status.startsWith("🔴")) return "status-pending";
+      if (status.startsWith("🟡")) return "status-pending-registration";
       return {
         "Não iniciada": "status-pending",
         "Em andamento": "status-pending-contract",
@@ -349,10 +394,12 @@
       dialog.close();
     }
 
-    function openForm(client = null) {
+    async function openForm(client = null) {
       // Preenche o formulario para edicao ou prepara um novo cadastro.
       if (dialog.open) return;
+      await documentationFilesReady;
       editingId = client?.id ?? null;
+      pendingCommercialFiles.clear();
       form.reset();
       form.querySelectorAll(".form-section").forEach((section, index) => {
         section.open = index === 0;
@@ -364,9 +411,10 @@
       document.querySelector("#delete-client").hidden = !client;
       document.querySelector("#delete-client").textContent = isDocumentationArea ? "Excluir registro" : "Excluir cliente";
       if (client) {
-        for (const field of ["company", "project", "address", "legalName", "cnpj", "invoiceDueDate", "workStartTime", "workEndTime", "plannedStartDate", "startDate", "plannedEndDate", "actualEndDate", "quantityOnSite", "recessKit"]) form.elements[field].value = client[field] || "";
+        for (const field of ["company", "project", "address", "legalName", "cnpj", "invoiceDueDate", "workStartTime", "workEndTime", "plannedStartDate", "startDate", "plannedEndDate", "actualEndDate", "quantityOnSite", "recessKit", "workSystem", "approvalDeadline", "tstPhone", "tstEmail", "proposalDate", "proposalStatus"]) form.elements[field].value = client[field] || "";
         form.elements.workStatus.value = getWorkStatus(client);
-        form.elements.documentationStatus.value = getDocumentationStatus(client);
+        form.elements.installation.checked = Boolean(client.installation);
+        form.elements.inspection.checked = Boolean(client.inspection);
         const workingDays = Array.isArray(client.workingDays) ? client.workingDays : [];
         form.querySelectorAll('input[name="workingDays"]').forEach((input) => {
           input.checked = workingDays.includes(input.value);
@@ -374,6 +422,7 @@
         updateWorkingDaysLabel();
       }
       updateOperationalCalculations();
+      updateCommercialDocumentFields(client?.id);
       dialog.showModal();
       form.elements.company.focus();
     }
@@ -389,6 +438,17 @@
     }, true);
     form.addEventListener("input", updateOperationalCalculations);
     form.addEventListener("change", updateOperationalCalculations);
+    form.addEventListener("click", (event) => {
+      const button = event.target.closest('[data-file-action="download"]');
+      if (button) downloadDocumentationFile(button.dataset.fileKey);
+    });
+    form.addEventListener("change", (event) => {
+      const input = event.target.closest(".commercial-file-input");
+      const file = input?.files?.[0];
+      if (!input || !file) return;
+      pendingCommercialFiles.set(input.dataset.documentType, file);
+      updateCommercialDocumentFields(editingId);
+    });
     form.querySelectorAll('input[name="workingDays"]').forEach((input) => {
       input.addEventListener("change", updateWorkingDaysLabel);
     });
@@ -455,10 +515,11 @@
     });
     rows.addEventListener("click", async (event) => {
       const button = event.target.closest("[data-file-action]");
-      if (!button || !isDocumentationArea) return;
+      if (!button) return;
       const file = documentationFiles.get(button.dataset.fileKey);
       if (!file) return;
       if (button.dataset.fileAction === "remove") {
+        if (!isDocumentationArea) return;
         if (!confirm(`Remover o arquivo ${file.name}?`)) return;
         try {
           await removeDocumentationFile(file.key);
@@ -470,12 +531,7 @@
         }
         return;
       }
-      const downloadUrl = URL.createObjectURL(file.blob);
-      const downloadLink = document.createElement("a");
-      downloadLink.href = downloadUrl;
-      downloadLink.download = file.name;
-      downloadLink.click();
-      setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+      downloadDocumentationFile(button.dataset.fileKey);
     });
     document.querySelector("#cnpj").addEventListener("input", (event) => {
       const digits = event.target.value.replace(/\D/g, "").slice(0, 14);
@@ -486,7 +542,7 @@
         .replace(/(\d{4})(\d)/, "$1-$2");
     });
 
-    form.addEventListener("submit", (event) => {
+    form.addEventListener("submit", async (event) => {
 
       // Valida e salva o cadastro, impedindo CNPJs duplicados.
       event.preventDefault();
@@ -494,6 +550,8 @@
       const formData = new FormData(form);
       const data = Object.fromEntries(formData.entries());
       data.workingDays = formData.getAll("workingDays");
+      data.installation = form.elements.installation.checked;
+      data.inspection = form.elements.inspection.checked;
       const cnpjDigits = normalizeCnpj(data.cnpj);
       const duplicate = cnpjDigits.length > 0 && clients.some((client) => {
         const clientCnpj = normalizeCnpj(client.cnpj);
@@ -506,13 +564,49 @@
         return;
       }
       const wasEditing = Boolean(editingId);
+      const clientId = editingId || crypto.randomUUID();
+      const clientData = { id: clientId, ...data };
+      const previousClients = clients;
       if (wasEditing) {
-        clients = clients.map((client) => client.id === editingId ? { ...client, ...data } : client);
+        clients = clients.map((client) => client.id === editingId ? clientData : client);
       } else {
-        clients.unshift({ id: crypto.randomUUID(), ...data });
+        clients.unshift(clientData);
       }
-      saveClients();
+      const saveButton = document.querySelector("#save-client");
+      saveButton.disabled = true;
+      try {
+        saveClients();
+      } catch (error) {
+        clients = previousClients;
+        console.error("Não foi possível salvar o cadastro.", error);
+        showToast("Não foi possível salvar o cadastro neste navegador.");
+        saveButton.disabled = false;
+        return;
+      }
+
+      editingId = clientId;
+      const failedUploads = [];
+      for (const [type, file] of pendingCommercialFiles) {
+        try {
+          await saveDocumentationFile(clientData, type, file);
+          pendingCommercialFiles.delete(type);
+        } catch (error) {
+          console.error(`Não foi possível salvar o documento ${file.name}.`, error);
+          failedUploads.push(file.name);
+        }
+      }
       render();
+      updateCommercialDocumentFields(clientId);
+      saveButton.disabled = false;
+      if (failedUploads.length) {
+        document.querySelector("#dialog-title").textContent = `Editar cliente`;
+        saveButton.textContent = "Salvar alterações";
+        document.querySelector("#delete-client").hidden = false;
+        document.querySelector("#delete-client").textContent = "Excluir cliente";
+        showToast("Cadastro salvo, mas não foi possível anexar: " + failedUploads.join(", "));
+        return;
+      }
+      pendingCommercialFiles.clear();
       closeDialog();
       showToast(wasEditing ? "Cadastro atualizado." : isDocumentationArea ? "Registro cadastrado." : "Cliente cadastrado.");
     });
@@ -533,9 +627,10 @@
     });
 
     render();
-    if (isDocumentationArea) {
-      loadDocumentationFiles().then(render).catch((error) => {
-        console.error("Não foi possível carregar os anexos.", error);
-        showToast("Não foi possível carregar os anexos neste navegador.");
-      });
-    }
+    documentationFilesReady = loadDocumentationFiles().then(() => {
+      render();
+      if (dialog.open) updateCommercialDocumentFields(editingId);
+    }).catch((error) => {
+      console.error("Não foi possível carregar os anexos.", error);
+      showToast("Não foi possível carregar os anexos neste navegador.");
+    });

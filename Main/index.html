@@ -14,7 +14,7 @@
 <body>
 
   <div class="app">
-    <aside class="sidebar" aria-label="Navegação principal">
+    <aside class="sidebar" id="main-sidebar" aria-label="Navegação principal">
       <!-- Identidade da empresa e navegacao entre as areas do sistema. -->
       <div class="brand">
         <div class="brand-mark">
@@ -39,7 +39,13 @@
             <details class="nav-nested-dropdown">
               <summary class="nav-subitem nav-nested-summary">Financeiro<svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg></summary>
               <div class="nav-nested-submenu">
-                <a class="nav-subitem" href="?area=financeiro-despesas" data-area="financeiro-despesas">Despesas</a>
+                <details class="nav-nested-dropdown">
+                  <summary class="nav-subitem nav-nested-summary">Despesas<svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg></summary>
+                  <div class="nav-nested-submenu">
+                    <a class="nav-subitem" href="?area=financeiro-despesas-beneficios" data-area="financeiro-despesas-beneficios">Benefíciarios</a>
+                    <a class="nav-subitem" href="?area=financeiro-despesas-boletos" data-area="financeiro-despesas-boletos">Boletos</a>
+                  </div>
+                </details>
                 <a class="nav-subitem" href="?area=financeiro-receitas" data-area="financeiro-receitas">Receitas</a>
               </div>
             </details>
@@ -53,7 +59,7 @@
 
   <!-- Area comercial: busca, status e gestao dos clientes. -->
     <main class="main">
-      <div class="topbar"><div class="top-label" id="top-label"><span class="status-dot"></span>Área comercial</div></div>
+      <div class="topbar"><button class="sidebar-toggle" id="sidebar-toggle" type="button" aria-label="Fechar navegação lateral" aria-expanded="true" aria-controls="main-sidebar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><div class="top-label" id="top-label"><span class="status-dot"></span>Área comercial</div></div>
       <div class="content" id="client-content">
         <header class="page-heading">
           
@@ -122,11 +128,11 @@
       <section class="personnel-page alternate-page" id="personnel-page" hidden aria-labelledby="personnel-title">
         <div class="personnel-content">
           <header class="personnel-heading alternate-heading">
-            <div><p class="eyebrow">Administrativo · Departamento Pessoal</p><h1 id="personnel-title">Colaboradores</h1><p class="subtitle">Cadastre e organize as informações dos colaboradores.</p></div>
+            <div><p class="eyebrow">Administrativo · Departamento Pessoal</p><h1 id="personnel-title">Colaboradores</h1></div>
             <button class="button button-primary" id="add-employee" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Novo colaborador</button>
           </header>
           <section class="employee-board" aria-label="Visualizações de colaboradores">
-            <div class="employee-board-toolbar"><div class="employee-tabs" role="tablist" aria-label="Visualizações de colaboradores"><button class="employee-tab active" type="button" role="tab" aria-selected="true" data-employee-view="gallery">▦ <span>Galeria de Funcionários</span></button><button class="employee-tab" type="button" role="tab" aria-selected="false" data-employee-view="contracts">▤ <span>Contrato</span></button><button class="employee-tab" type="button" role="tab" aria-selected="false" data-employee-view="departments">▦ <span>Departamentos</span></button><button class="employee-tab" type="button" role="tab" aria-selected="false" data-employee-view="functions">▦ <span>Funções</span></button></div></div>
+            <div class="employee-board-toolbar"><div class="employee-tabs" role="tablist" aria-label="Visualizações de colaboradores"><button class="employee-tab active" type="button" role="tab" aria-selected="true" data-employee-view="gallery">▦ <span>Galeria de Funcionários</span></button><button class="employee-tab" type="button" role="tab" aria-selected="false" data-employee-view="contracts">▤ <span>Contrato</span></button><button class="employee-tab" type="button" role="tab" aria-selected="false" data-employee-view="departments">▦ <span>Departamentos</span></button><button class="employee-tab" type="button" role="tab" aria-selected="false" data-employee-view="functions">▦ <span>Funções</span></button></div><div class="status-dropdown employee-contract-filter" id="employee-contract-dropdown" hidden><button class="status-menu-toggle" id="employee-contract-toggle" type="button" aria-label="Filtrar colaboradores por contrato" aria-haspopup="menu" aria-expanded="false" aria-controls="employee-contract-menu"><span id="employee-contract-label">Todas</span><span class="status-count" id="employee-contract-count">0</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg></button><div class="status-menu" id="employee-contract-menu" role="menu" aria-label="Tipos de contrato" hidden></div></div></div>
             <div class="employee-grid" id="employee-grid"></div>
             <div class="employee-empty" id="employee-empty" hidden><h3>Nenhum colaborador cadastrado</h3><p>Use o botão Novo colaborador para adicionar alguém à equipe.</p></div>
             <p class="employee-feedback" id="employee-feedback" role="status" aria-live="polite"></p>
@@ -135,8 +141,19 @@
       </section>
 
       <section class="finance-page alternate-page" id="finance-page" hidden aria-labelledby="finance-title">
-        <header class="alternate-heading"><p class="eyebrow">Administrativo · Financeiro</p><h1 id="finance-title">Financeiro</h1><p class="subtitle" id="finance-description"></p></header>
-        <section class="finance-empty"><span class="finance-empty-icon" aria-hidden="true">$</span><h2 id="finance-empty-title"></h2><p>Esta área está pronta para receber seus lançamentos.</p></section>
+        <header class="alternate-heading finance-heading"><div><p class="eyebrow" id="finance-eyebrow">Administrativo · Financeiro</p><h1 id="finance-title">Financeiro</h1><p class="subtitle" id="finance-description"></p></div><button class="button button-primary" id="add-finance-record" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span id="add-finance-record-label">Novo</span></button></header>
+        <section class="supplier-page" id="supplier-page" hidden aria-label="Cadastro de fornecedores">
+          <div class="finance-toolbar"><label class="search-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg><input class="search" id="supplier-search" type="search" placeholder="Buscar fornecedor" aria-label="Buscar fornecedor"></label></div>
+          <div class="supplier-grid" id="supplier-grid"></div>
+          <div class="finance-empty" id="supplier-empty" hidden><span class="finance-empty-icon" aria-hidden="true">$</span><h2>Nenhum fornecedor cadastrado</h2></div>
+          <p class="employee-feedback" id="supplier-feedback" role="status" aria-live="polite"></p>
+        </section>
+        <section class="bill-page" id="bill-page" hidden aria-label="Controle de boletos">
+          <div class="bill-toolbar"><div class="status-dropdown" id="bill-view-dropdown"><button class="status-menu-toggle" id="bill-view-toggle" type="button" aria-label="Filtrar boletos por visualização" aria-haspopup="menu" aria-expanded="false" aria-controls="bill-view-menu"><span id="bill-view-current-label">A pagar</span><span class="status-count" id="selected-bill-view-count">0</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg></button><div class="status-menu" id="bill-view-menu" role="menu" aria-label="Visualizações dos boletos" hidden></div></div><label class="search-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg><input class="search" id="bill-search" type="search" placeholder="Buscar boleto ou beneficiário" aria-label="Buscar boleto ou beneficiário"></label></div>
+          <div class="bill-table-shell" id="bill-table-shell"><div class="table-scroll" id="bill-table-scroll"><table class="bill-table" id="bill-table"><thead><tr id="bill-headers"></tr></thead><tbody id="bill-rows"></tbody></table></div><div class="bill-total-row"><span id="bill-total-label">Total a pagar</span><strong id="bill-total"></strong></div><div class="bill-horizontal-scroll" id="bill-horizontal-scroll" aria-label="Rolagem horizontal da tabela de boletos" tabindex="0"><div id="bill-horizontal-scroll-content"></div></div></div>
+          <p class="employee-feedback" id="bill-feedback" role="status" aria-live="polite"></p>
+        </section>
+        <section class="finance-empty" id="finance-placeholder"><span class="finance-empty-icon" aria-hidden="true">$</span><h2 id="finance-empty-title"></h2><p>Esta área está pronta para receber seus lançamentos.</p></section>
       </section>
     </main>
   </div>
@@ -155,9 +172,18 @@
               <div class="field"><label for="employee-birthday">Aniversário</label><input id="employee-birthday" type="date" readonly title="Calculado para o ano atual a partir da data de nascimento"></div>
               <div class="field full"><label for="employee-address">Endereço</label><input id="employee-address" name="address" autocomplete="street-address"></div>
               <div class="field"><label for="employee-email">E-mail</label><input id="employee-email" name="email" type="email" autocomplete="email"></div>
-              <div class="field"><label for="employee-pix">Chave PIX</label><input id="employee-pix" name="pix" autocomplete="off"></div>
               <div class="field"><label for="employee-pis">PIS</label><input id="employee-pis" name="pis" inputmode="numeric"></div>
               <div class="field full"><span class="field-label">Foto do colaborador</span><div class="employee-photo-control"><img id="employee-photo-preview" alt="Prévia da foto do colaborador" hidden><span id="employee-photo-empty" aria-hidden="true">Sem foto</span><div class="employee-photo-actions"><label class="employee-photo-upload" for="employee-photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m-4 4 4-4 4 4M5 14v5h14v-5"/></svg><span>Escolher foto</span><input id="employee-photo" type="file" accept="image/*" aria-label="Escolher foto do colaborador"></label><span class="employee-photo-filename" id="employee-photo-filename">JPG, PNG ou outro formato de imagem (até 10 MB)</span></div></div></div>
+            </div>
+          </details>
+          <details class="form-section" open>
+            <summary>Informações bancárias</summary>
+            <div class="form-section-body form-grid">
+              <div class="field"><label for="employee-bank">Banco</label><div class="employee-bank-select-row"><select id="employee-bank" name="bank"><option value="">Selecione</option></select><button class="button button-quiet employee-add-bank-button" id="employee-add-bank" type="button">Adicionar</button></div><div class="employee-bank-add-row" id="employee-bank-add-row" hidden><input id="employee-new-bank" type="text" maxlength="80" placeholder="Nome do banco" aria-label="Nome do novo banco"><button class="button button-primary" id="employee-save-bank" type="button">Salvar</button><button class="button button-quiet" id="employee-cancel-bank" type="button">Cancelar</button></div></div>
+              <div class="field"><label for="employee-bank-branch">Agência</label><input id="employee-bank-branch" name="bankBranch" inputmode="numeric" autocomplete="off"></div>
+              <div class="field"><label for="employee-bank-account">Número da conta</label><input id="employee-bank-account" name="bankAccount" autocomplete="off"></div>
+              <div class="field"><label for="employee-pix-type">Tipo de chave Pix</label><select id="employee-pix-type" name="pixType"><option value="">Selecione</option><option>Telefone</option><option>CPF</option><option>E-mail</option><option>Chave aleatória</option></select></div>
+              <div class="field"><label for="employee-pix">Chave Pix</label><input id="employee-pix" name="pix" autocomplete="off"></div>
             </div>
           </details>
           <details class="form-section" open>
@@ -185,6 +211,47 @@
       </div>
       <p class="employee-feedback" id="employee-form-feedback" role="status" aria-live="polite"></p>
       <div class="dialog-actions"><div class="actions-end"><button class="button button-quiet" id="cancel-employee-dialog" type="button">Cancelar</button><button class="button button-primary" type="submit">Salvar colaborador</button></div></div>
+    </form>
+  </dialog>
+
+  <dialog class="dialog finance-dialog" id="supplier-dialog" aria-labelledby="supplier-dialog-title">
+    <form id="supplier-form">
+      <div class="dialog-head"><div><h2 id="supplier-dialog-title">Novo fornecedor</h2><p>Cadastre um fornecedor da empresa.</p></div><button class="icon-button" id="close-supplier-dialog" type="button" aria-label="Fechar formulário"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+      <div class="dialog-body"><div class="form-grid">
+        <div class="field full"><label for="supplier-name">Nome do fornecedor</label><input id="supplier-name" name="name" required maxlength="120" placeholder="Nome da empresa ou fornecedor"></div>
+        <div class="field"><label for="supplier-category">Categoria</label><input id="supplier-category" name="category" maxlength="80" placeholder="Ex.: Combustível"></div>
+        <div class="field"><label for="supplier-contact">Contato</label><input id="supplier-contact" name="contact" maxlength="120"></div>
+        <div class="field"><label for="supplier-phone">Telefone</label><input id="supplier-phone" name="phone" autocomplete="tel"></div>
+        <div class="field"><label for="supplier-email">E-mail</label><input id="supplier-email" name="email" type="email" autocomplete="email"></div>
+        <div class="field full"><label for="supplier-notes">Observações</label><textarea id="supplier-notes" name="notes" rows="3"></textarea></div>
+        <div class="field full"><span class="field-label">Foto ou logotipo</span><div class="employee-photo-control"><img id="supplier-photo-preview" alt="Prévia da foto do fornecedor" hidden><span id="supplier-photo-empty" class="employee-photo-empty" aria-hidden="true">Sem foto</span><div class="employee-photo-actions"><label class="employee-photo-upload" for="supplier-photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m-4 4 4-4 4 4M5 14v5h14v-5"/></svg><span>Escolher imagem</span><input id="supplier-photo" type="file" accept="image/*" aria-label="Escolher foto ou logotipo do fornecedor"></label><span class="employee-photo-filename" id="supplier-photo-filename">Imagem opcional, até 10 MB</span></div></div></div>
+      </div><p class="employee-feedback" id="supplier-form-feedback" role="status" aria-live="polite"></p></div>
+      <div class="dialog-actions"><div class="actions-end"><button class="button button-quiet" id="cancel-supplier-dialog" type="button">Cancelar</button><button class="button button-primary" type="submit">Salvar fornecedor</button></div></div>
+    </form>
+  </dialog>
+
+  <dialog class="dialog finance-dialog" id="bill-dialog" aria-labelledby="bill-dialog-title">
+    <form id="bill-form">
+      <div class="dialog-head"><div><h2 id="bill-dialog-title">Novo boleto</h2><p>Registre os dados de vencimento e pagamento.</p></div><button class="icon-button" id="close-bill-dialog" type="button" aria-label="Fechar formulário"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+      <div class="dialog-body"><div class="form-grid">
+        <div class="field"><label for="bill-number">N° do boleto</label><input id="bill-number" name="number" maxlength="120" placeholder="Descrição ou número"></div>
+        <div class="field"><label for="bill-supplier">Beneficiário</label><select id="bill-supplier" name="supplierId" required><option value="">Selecione um fornecedor</option></select></div>
+        <div class="field"><label for="bill-value">Valor</label><input id="bill-value" name="value" inputmode="decimal" placeholder="0,00" required></div>
+        <div class="field"><label for="bill-due-date">Dia Vencimento</label><input id="bill-due-date" name="dueDate" type="date"></div>
+        <div class="field"><label for="bill-advance-payment-date">Antecipação Pagamento</label><input id="bill-advance-payment-date" name="advancePaymentDate" type="date"></div>
+        <div class="field"><label for="bill-payment-date">Dia Pagamento</label><input id="bill-payment-date" name="paymentDate" type="date"></div>
+        <div class="field"><label for="bill-fees">Encargos</label><input id="bill-fees" name="fees" inputmode="decimal" placeholder="0,00"></div>
+        <div class="field"><label for="bill-kind">Classificação</label><select id="bill-kind" name="kind"><option value="expense">A pagar</option><option value="credit">Crédito</option></select></div>
+        <div class="field"><label for="bill-document">Documento do boleto</label><input id="bill-document" name="document" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp"></div>
+        <div class="field"><label for="bill-receipt">Comprovante de pagamento</label><input id="bill-receipt" name="receipt" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp"></div>
+        <div class="field full"><label for="bill-details">Observação</label><textarea id="bill-details" name="details" rows="3"></textarea></div>
+        <div class="field"><label for="bill-method">Método</label><input id="bill-method" name="method" maxlength="100"></div>
+        <div class="field"><label for="bill-bank">Banco</label><input id="bill-bank" name="bank" maxlength="100"></div>
+        <div class="field"><label for="bill-installment">Parcela</label><input id="bill-installment" name="installment" maxlength="100"></div>
+        <div class="field"><label for="bill-responsible">Responsável</label><input id="bill-responsible" name="responsible" maxlength="120"></div>
+        <div class="field"><label for="bill-credit-type">Tipo</label><input id="bill-credit-type" name="creditType" maxlength="100"></div>
+      </div><p class="employee-feedback" id="bill-form-feedback" role="status" aria-live="polite"></p></div>
+      <div class="dialog-actions"><div class="actions-end"><button class="button button-quiet" id="cancel-bill-dialog" type="button">Cancelar</button><button class="button button-primary" type="submit">Salvar boleto</button></div></div>
     </form>
   </dialog>
 

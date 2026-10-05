@@ -4,10 +4,16 @@
     const isDocumentationArea = currentArea === "documentacao";
     const isSettingsArea = currentArea === "configuracoes";
     const isPersonnelArea = currentArea === "departamento-pessoal";
-    const isFinanceArea = currentArea === "financeiro-despesas" || currentArea === "financeiro-receitas";
+    const financeAreas = ["financeiro-despesas", "financeiro-despesas-beneficios", "financeiro-despesas-boletos", "financeiro-receitas"];
+    const isSupplierArea = currentArea === "financeiro-despesas-beneficios";
+    const isBillsArea = currentArea === "financeiro-despesas-boletos";
+    const isFinanceArea = financeAreas.includes(currentArea);
     const isAlternateArea = isSettingsArea || isPersonnelArea || isFinanceArea;
     const storageKey = "god-sistemas-clientes-v1";
     const employeesStorageKey = "god-sistemas-colaboradores-v1";
+    const employeeBanksStorageKey = "god-sistemas-bancos-v1";
+    const suppliersStorageKey = "god-sistemas-fornecedores-v1";
+    const billsStorageKey = "god-sistemas-boletos-v1";
     const preferencesStorageKey = "god-sistemas-preferencias-v1";
     const documentationDatabaseName = "god-sistemas-documentos-v1";
     const documentationStoreName = "files";
@@ -20,6 +26,9 @@
     const statusMenuToggle = document.querySelector("#status-menu-toggle");
     const statusMenu = document.querySelector("#status-menu");
     const tableHead = document.querySelector("#client-table-head");
+    const app = document.querySelector(".app");
+    const sidebar = document.querySelector("#main-sidebar");
+    const sidebarToggle = document.querySelector("#sidebar-toggle");
     const workStatuses = ["Não iniciada", "Em andamento", "Concluída"];
     const documentTypes = [
       { label: "Proposta", type: "proposal" },
@@ -27,6 +36,11 @@
       { label: "Ficha Cadastral", type: "registration" }
     ];
     const documentationStatuses = ["🔴 Pendente", "🟢 Completa"];
+    const billViews = [
+      { id: "payable", label: "A pagar" },
+      { id: "payment", label: "Pago" },
+      { id: "credit", label: "Crédito" }
+    ];
     for (let missingMask = 1; missingMask < 7; missingMask += 1) {
       const missingDocuments = documentTypes.filter((_, index) => missingMask & (1 << index)).map((document) => document.label);
       documentationStatuses.push(`🟡 Pendente em ${missingDocuments.join(" e ")}`);
@@ -37,11 +51,20 @@
     let editingId = null;
     let editingEmployeeId = null;
     let activeEmployeeView = "gallery";
+    let activeContractFilter = "Todas";
+    let activeBillView = "payable";
     let employeePhotoPreviewUrl = null;
     const employeePhotoUrls = new Map();
     let activeStatus = isDocumentationArea ? "Todas as etapas" : "Todas";
     let toastTimer;
     let documentationFilesReady = Promise.resolve();
+
+    sidebarToggle.addEventListener("click", () => {
+      const collapsed = app.classList.toggle("sidebar-collapsed");
+      sidebar.inert = collapsed;
+      sidebarToggle.setAttribute("aria-expanded", String(!collapsed));
+      sidebarToggle.setAttribute("aria-label", collapsed ? "Abrir navegação lateral" : "Fechar navegação lateral");
+    });
 
     function getAreaStatuses() {
       return isDocumentationArea ? documentationStatuses : workStatuses;
@@ -112,6 +135,8 @@
       configuracoes: "Preferências",
       "departamento-pessoal": "Departamento Pessoal",
       "financeiro-despesas": "Financeiro · Despesas",
+      "financeiro-despesas-beneficios": "Financeiro · Despesas · Benefícios",
+      "financeiro-despesas-boletos": "Financeiro · Despesas · Boletos",
       "financeiro-receitas": "Financeiro · Receitas"
     };
     document.querySelector("#top-label").lastChild.textContent = areaLabels[currentArea] || areaLabels["rede-de-clientes"];
@@ -146,13 +171,36 @@
         link.setAttribute("aria-current", "page");
       }
     });
-    document.querySelector(".nav-nested-dropdown").open = isFinanceArea;
+    document.querySelectorAll(".nav-nested-dropdown")[0].open = isFinanceArea;
+    document.querySelectorAll(".nav-nested-dropdown")[1].open = currentArea.startsWith("financeiro-despesas-");
     document.title = `${isSettingsArea ? "Preferências" : isPersonnelArea ? "Departamento Pessoal" : isFinanceArea ? "Financeiro" : isDocumentationArea ? "Documentação" : "Rede de Clientes"} | GOD Sistemas de Proteções`;
     if (isFinanceArea) {
-      const financeTitle = currentArea === "financeiro-despesas" ? "Despesas" : "Receitas";
-      document.querySelector("#finance-title").textContent = financeTitle;
-      document.querySelector("#finance-description").textContent = `Acompanhe os lançamentos de ${financeTitle.toLocaleLowerCase("pt-BR")}.`;
-      document.querySelector("#finance-empty-title").textContent = `Nenhuma ${financeTitle.toLocaleLowerCase("pt-BR").replace(/s$/, "")} cadastrada`;
+      const financeTitle = {
+        "financeiro-despesas": "Despesas",
+        "financeiro-despesas-beneficios": "Benefícios",
+        "financeiro-despesas-boletos": "Boletos",
+        "financeiro-receitas": "Receitas"
+      }[currentArea];
+      const financeEmptyTitle = {
+        "financeiro-despesas": "Nenhuma despesa cadastrada",
+        "financeiro-despesas-beneficios": "Nenhum benefício cadastrado",
+        "financeiro-despesas-boletos": "Nenhum boleto cadastrado",
+        "financeiro-receitas": "Nenhuma receita cadastrada"
+      }[currentArea];
+      const financePageTitle = isSupplierArea ? "Fornecedores" : isBillsArea ? "Boletos" : financeTitle;
+      document.querySelector("#finance-title").textContent = financePageTitle;
+      document.querySelector("#finance-eyebrow").hidden = isSupplierArea;
+      document.querySelector("#finance-description").textContent = isSupplierArea || isBillsArea
+        ? ""
+        : `Acompanhe os lançamentos de ${financeTitle.toLocaleLowerCase("pt-BR")}.`;
+      document.querySelector("#finance-description").hidden = isSupplierArea || isBillsArea;
+      document.querySelector("#add-finance-record-label").textContent = isSupplierArea ? "Novo fornecedor" : isBillsArea ? "Novo boleto" : "Novo";
+      document.querySelector("#supplier-page").hidden = !isSupplierArea;
+      document.querySelector("#bill-page").hidden = !isBillsArea;
+      document.querySelector("#finance-placeholder").hidden = isSupplierArea || isBillsArea;
+      document.querySelector("#supplier-dialog").hidden = !isSupplierArea;
+      document.querySelector("#bill-dialog").hidden = !isBillsArea;
+      document.querySelector("#finance-empty-title").textContent = financeEmptyTitle;
     }
 
     function loadPreferences() {
@@ -203,6 +251,44 @@
 
     function saveEmployees() {
       localStorage.setItem(employeesStorageKey, JSON.stringify(employees));
+    }
+
+    const defaultEmployeeBanks = [
+      "Banco do Brasil",
+      "Bradesco",
+      "Caixa Econômica Federal",
+      "Itaú",
+      "Santander",
+      "Nubank",
+      "Banco Inter",
+      "C6 Bank",
+      "Sicredi",
+      "Sicoob",
+      "BTG Pactual",
+      "Banco Safra",
+      "Banrisul",
+      "Mercado Pago",
+      "PicPay"
+    ];
+
+    function loadEmployeeBanks() {
+      try {
+        const stored = JSON.parse(localStorage.getItem(employeeBanksStorageKey) || "[]");
+        return Array.isArray(stored) ? stored.filter((bank) => typeof bank === "string" && bank.trim()) : [];
+      } catch (error) {
+        console.error("Não foi possível carregar a lista de bancos.", error);
+        return [];
+      }
+    }
+
+    let employeeBanks = [...new Set([...defaultEmployeeBanks, ...loadEmployeeBanks()])];
+
+    function renderEmployeeBankOptions(selectedBank = "") {
+      const bankSelect = document.querySelector("#employee-bank");
+      const savedBanks = employees.map((employee) => employee.bank).filter((bank) => typeof bank === "string" && bank.trim());
+      const options = [...new Set([...employeeBanks, ...savedBanks, selectedBank].filter(Boolean))].sort((first, second) => first.localeCompare(second, "pt-BR"));
+      bankSelect.innerHTML = '<option value="">Selecione</option>' + options.map((bank) => `<option value="${escapeHtml(bank)}">${escapeHtml(bank)}</option>`).join("");
+      bankSelect.value = selectedBank;
     }
 
     function parseEmployeeDate(value) {
@@ -326,6 +412,8 @@
     function renderEmployees() {
       const grid = document.querySelector("#employee-grid");
       const empty = document.querySelector("#employee-empty");
+      const contractFilter = document.querySelector("#employee-contract-dropdown");
+      contractFilter.hidden = activeEmployeeView !== "contracts";
       if (activeEmployeeView === "departments" || activeEmployeeView === "functions") {
         const property = activeEmployeeView === "departments" ? "department" : "jobFunction";
         const groupedEmployees = employees.reduce((groups, employee) => {
@@ -342,11 +430,20 @@
           { name: "Contrato Social", matches: ["contrato social"] },
           { name: "Freelancer/Autônomo", matches: ["freelancer/autônomo", "freelancer/autonomo"] }
         ];
-        grid.innerHTML = contracts.map((contract) => {
-          const group = employees.filter((employee) => contract.matches.includes(String(employee.contract || "").trim().toLocaleLowerCase("pt-BR")));
-          return `<section class="employee-contract-group"><div class="employee-contract-heading"><h2>${escapeHtml(contract.name)}</h2><span class="employee-group-count">${group.length}</span></div><div class="employee-contract-grid">${renderEmployeeCards(group)}</div></section>`;
+        const contractMatches = (employee, contract) => contract.matches.includes(String(employee.contract || "").trim().toLocaleLowerCase("pt-BR"));
+        const selectedContract = contracts.find((contract) => contract.name === activeContractFilter);
+        const displayedEmployees = selectedContract ? employees.filter((employee) => contractMatches(employee, selectedContract)) : employees;
+        const menu = document.querySelector("#employee-contract-menu");
+        const toggle = document.querySelector("#employee-contract-toggle");
+        document.querySelector("#employee-contract-label").textContent = activeContractFilter;
+        document.querySelector("#employee-contract-count").textContent = displayedEmployees.length;
+        toggle.setAttribute("aria-label", `Filtrar colaboradores por contrato. ${activeContractFilter}: ${displayedEmployees.length}`);
+        menu.innerHTML = [{ name: "Todas", matches: [] }, ...contracts].map((contract) => {
+          const count = contract.name === "Todas" ? employees.length : employees.filter((employee) => contractMatches(employee, contract)).length;
+          return `<button class="status-menu-item" type="button" role="menuitemradio" data-contract="${escapeHtml(contract.name)}" aria-checked="${String(activeContractFilter === contract.name)}"><span>${escapeHtml(contract.name)}</span><span class="status-count">${count}</span></button>`;
         }).join("");
-        empty.hidden = employees.length > 0;
+        grid.innerHTML = renderEmployeeCards(displayedEmployees);
+        empty.hidden = displayedEmployees.length > 0;
       } else {
         grid.innerHTML = renderEmployeeCards(employees);
         empty.hidden = employees.length > 0;
@@ -367,6 +464,214 @@
 
     function escapeHtml(value) {
       return String(value ?? "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
+    }
+
+    function loadFinanceRecords(key) {
+      try {
+        const stored = JSON.parse(localStorage.getItem(key) || "[]");
+        return Array.isArray(stored) ? stored.filter((record) => record && typeof record.id === "string") : [];
+      } catch (error) {
+        console.error(`Não foi possível carregar os dados salvos em ${key}.`, error);
+        return [];
+      }
+    }
+
+    let suppliers = loadFinanceRecords(suppliersStorageKey);
+    let bills = loadFinanceRecords(billsStorageKey);
+    let editingSupplierId = null;
+    let editingBillId = null;
+    let supplierPhotoPreviewUrl = null;
+
+    function parseMoney(value) {
+      const normalized = String(value ?? "").trim().replace(/[^\d,.-]/g, "");
+      if (!normalized) return 0;
+      const decimalNormalized = normalized.includes(",")
+        ? normalized.replace(/\./g, "").replace(",", ".")
+        : normalized;
+      const amount = Number(decimalNormalized);
+      return Number.isFinite(amount) ? amount : 0;
+    }
+
+    function formatMoney(value) {
+      return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(value) || 0);
+    }
+
+    function getTodayInputDate() {
+      const today = new Date();
+      const month = String(today.getMonth() + 1).padStart(2, "0");
+      const day = String(today.getDate()).padStart(2, "0");
+      return `${today.getFullYear()}-${month}-${day}`;
+    }
+
+    function saveFinanceRecords(key, records) {
+      localStorage.setItem(key, JSON.stringify(records));
+    }
+
+    function getFinanceFileUrl(key) {
+      const file = documentationFiles.get(key);
+      if (!file?.blob) return "";
+      if (!employeePhotoUrls.has(key)) employeePhotoUrls.set(key, URL.createObjectURL(file.blob));
+      return employeePhotoUrls.get(key);
+    }
+
+    async function saveFinanceFile(key, ownerId, type, file) {
+      const database = await openDocumentationDatabase();
+      const record = { key, ownerId, type, name: file.name, blob: file, updatedAt: Date.now() };
+      try {
+        await new Promise((resolve, reject) => {
+          const transaction = database.transaction(documentationStoreName, "readwrite");
+          transaction.objectStore(documentationStoreName).put(record);
+          transaction.oncomplete = resolve;
+          transaction.onerror = () => reject(transaction.error);
+          transaction.onabort = () => reject(transaction.error);
+        });
+      } finally {
+        database.close();
+      }
+      const oldUrl = employeePhotoUrls.get(key);
+      if (oldUrl) URL.revokeObjectURL(oldUrl);
+      employeePhotoUrls.delete(key);
+      documentationFiles.set(key, record);
+    }
+
+    function getSupplierPhotoUrl(supplierId) {
+      return getFinanceFileUrl(`supplier:${supplierId}:photo`);
+    }
+
+    function renderSuppliers() {
+      const query = document.querySelector("#supplier-search").value.trim().toLocaleLowerCase("pt-BR");
+      const filtered = suppliers.filter((supplier) => `${supplier.name} ${supplier.category || ""} ${supplier.contact || ""}`.toLocaleLowerCase("pt-BR").includes(query));
+      document.querySelector("#supplier-grid").innerHTML = filtered.map((supplier) => {
+        const photoUrl = getSupplierPhotoUrl(supplier.id);
+        const image = photoUrl
+          ? `<img src="${escapeHtml(photoUrl)}" alt="Imagem de ${escapeHtml(supplier.name)}">`
+          : `<span class="supplier-avatar-fallback" aria-hidden="true">${escapeHtml(supplier.name.slice(0, 1).toLocaleUpperCase("pt-BR"))}</span>`;
+        return `<article class="supplier-card"><div class="supplier-card-image">${image}</div><div class="supplier-card-body"><h2>${escapeHtml(supplier.name)}</h2>${supplier.category ? `<span class="employee-tag">${escapeHtml(supplier.category)}</span>` : ""}${supplier.contact ? `<p>${escapeHtml(supplier.contact)}</p>` : ""}<div class="employee-card-actions"><span>${escapeHtml(supplier.phone || supplier.email || "Fornecedor")}</span><button type="button" class="employee-edit" data-edit-supplier="${escapeHtml(supplier.id)}">Editar</button></div></div></article>`;
+      }).join("");
+      document.querySelector("#supplier-empty").hidden = filtered.length > 0;
+    }
+
+    function getBillStatus(bill) {
+      if (bill.paymentDate) return { label: "Pago", className: "status-completed" };
+      const dueDate = parseDate(bill.dueDate);
+      if (dueDate && dueDate < getTodayDate()) return { label: "Em atraso", className: "status-pending" };
+      return { label: "A pagar", className: "status-pending-contract" };
+    }
+
+    function billMatchesView(bill, view) {
+      if (view === "payable") return !bill.paymentDate && bill.kind !== "credit";
+      if (view === "payment") return Boolean(bill.paymentDate) && bill.kind !== "credit";
+      return bill.kind === "credit";
+    }
+
+    function billMatchesSearch(bill, query) {
+      const supplier = suppliers.find((item) => item.id === bill.supplierId);
+      return `${bill.number || ""} ${supplier?.name || bill.supplierName || ""} ${bill.details || ""} ${bill.method || ""} ${bill.bank || ""} ${bill.installment || ""} ${bill.responsible || ""} ${bill.creditType || ""}`
+        .toLocaleLowerCase("pt-BR")
+        .includes(query);
+    }
+
+    function renderBills() {
+      const query = document.querySelector("#bill-search").value.trim().toLocaleLowerCase("pt-BR");
+      const billViewMenu = document.querySelector("#bill-view-menu");
+      const billView = billViews.find((view) => view.id === activeBillView) || billViews[0];
+      const viewCounts = Object.fromEntries(billViews.map((view) => [
+        view.id,
+        bills.filter((bill) => billMatchesSearch(bill, query) && billMatchesView(bill, view.id)).length
+      ]));
+      document.querySelector("#bill-view-current-label").textContent = billView.label;
+      document.querySelector("#selected-bill-view-count").textContent = viewCounts[billView.id];
+      billViewMenu.innerHTML = billViews.map((view) => `
+        <button class="status-menu-item" type="button" role="menuitemradio" data-bill-view="${view.id}" aria-checked="${String(view.id === billView.id)}">
+          <span>${view.label}</span><span class="status-count">${viewCounts[view.id]}</span>
+        </button>`).join("");
+      const payableColumns = [
+        { key: "number", label: "N° DO BOLETO" },
+        { key: "beneficiary", label: "Beneficiário" },
+        { key: "document", label: "Documento" },
+        { key: "value", label: "Valor" },
+        { key: "dueDate", label: "Dia Vencimento" },
+        { key: "advancePaymentDate", label: "Antecipação Pagamento" },
+        { key: "paymentDate", label: "Dia Pagamento" },
+        { key: "fees", label: "Encargos" },
+        { key: "receipt", label: "Comprovante" },
+        { key: "status", label: "Situação" },
+        { key: "details", label: "Observação" },
+        { key: "method", label: "Método" },
+        { key: "bank", label: "Banco" }
+      ];
+      const paidColumns = payableColumns.filter(({ key }) => key !== "dueDate");
+      const creditColumns = [
+        { key: "number", label: "N° DO BOLETO" },
+        { key: "beneficiary", label: "Beneficiário" },
+        { key: "document", label: "Documento" },
+        { key: "dueDate", label: "Vencimento" },
+        { key: "paymentDate", label: "Dia Pagamento" },
+        { key: "value", label: "Valor" },
+        { key: "status", label: "Situação" },
+        { key: "installment", label: "Parcela" },
+        { key: "bank", label: "Banco" },
+        { key: "responsible", label: "Responsável" },
+        { key: "creditType", label: "Tipo" },
+        { key: "receipt", label: "Comprovante" }
+      ];
+      const columns = activeBillView === "payment"
+        ? paidColumns
+        : activeBillView === "credit"
+          ? creditColumns
+          : payableColumns;
+      document.querySelector("#bill-headers").innerHTML = `${columns.map(({ label }) => `<th>${label}</th>`).join("")}<th><span class="sr-only">Ações</span></th>`;
+      const visibleBills = bills.filter((bill) => billMatchesSearch(bill, query) && billMatchesView(bill, billView.id))
+        .sort((first, second) => (first.dueDate || "9999-12-31").localeCompare(second.dueDate || "9999-12-31"));
+
+      const rows = visibleBills.map((bill) => {
+        const supplier = suppliers.find((item) => item.id === bill.supplierId);
+        const documentFile = documentationFiles.get(`bill:${bill.id}:document`);
+        const receiptFile = documentationFiles.get(`bill:${bill.id}:receipt`);
+        const status = getBillStatus(bill);
+        const amountDue = parseMoney(bill.value) + parseMoney(bill.fees);
+        const cells = {
+          number: escapeHtml(bill.number || "—"),
+          beneficiary: escapeHtml(supplier?.name || bill.supplierName || "Fornecedor removido"),
+          document: documentFile ? `<button class="document-file-name" type="button" data-file-action="download" data-file-key="bill:${escapeHtml(bill.id)}:document">${escapeHtml(documentFile.name)}</button>` : '<span class="document-empty">Sem arquivo</span>',
+          value: formatMoney(parseMoney(bill.value)),
+          dueDate: formatClientDate(bill.dueDate),
+          advancePaymentDate: formatClientDate(bill.advancePaymentDate),
+          paymentDate: formatClientDate(bill.paymentDate),
+          fees: formatMoney(parseMoney(bill.fees)),
+          receipt: receiptFile ? `<button class="document-file-name" type="button" data-file-action="download" data-file-key="bill:${escapeHtml(bill.id)}:receipt">${escapeHtml(receiptFile.name)}</button>` : bill.receiptName ? escapeHtml(bill.receiptName) : '<span class="document-empty">—</span>',
+          status: `<span class="status-badge ${status.className}">${status.label}</span>`,
+          details: escapeHtml(bill.details || "—"),
+          method: escapeHtml(bill.method || "—"),
+          bank: escapeHtml(bill.bank || "—"),
+          installment: escapeHtml(bill.installment || "—"),
+          responsible: escapeHtml(bill.responsible || "—"),
+          creditType: escapeHtml(bill.creditType || "—")
+        };
+        const actionCell = `<td class="action-cell"><button class="icon-button" type="button" data-edit-bill="${escapeHtml(bill.id)}" aria-label="Editar boleto" title="Editar">✎</button><button class="icon-button" type="button" data-delete-bill="${escapeHtml(bill.id)}" aria-label="Excluir boleto" title="Excluir">×</button></td>`;
+        return `<tr>${columns.map(({ key }) => `<td${key === "number" ? ' class="primary-cell"' : ""}>${cells[key]}</td>`).join("")}${actionCell}</tr>`;
+      });
+      const emptyTitle = query
+        ? "Nenhum boleto encontrado"
+        : activeBillView === "payment"
+          ? "Nenhum boleto pago"
+          : activeBillView === "credit"
+            ? "Nenhum crédito cadastrado"
+            : "Nenhum boleto cadastrado";
+      document.querySelector("#bill-rows").innerHTML = rows.length
+        ? rows.join("")
+        : `<tr class="bill-empty-row"><td colspan="${columns.length + 1}"><div class="bill-empty-state"><span class="finance-empty-icon" aria-hidden="true">$</span><h2>${emptyTitle}</h2></div></td></tr>`;
+      updateBillHorizontalScroll();
+      const total = visibleBills.reduce((sum, bill) => sum + parseMoney(bill.value) + parseMoney(bill.fees), 0);
+      document.querySelector("#bill-total").textContent = formatMoney(total);
+      document.querySelector("#bill-total-label").textContent = activeBillView === "payment" ? "Total pago" : activeBillView === "credit" ? "Total de crédito" : "Total a pagar";
+    }
+
+    function updateBillHorizontalScroll() {
+      const table = document.querySelector("#bill-table");
+      const scrollContent = document.querySelector("#bill-horizontal-scroll-content");
+      if (!table || !scrollContent) return;
+      scrollContent.style.width = `${table.scrollWidth}px`;
     }
 
     function normalizeCnpj(value) {
@@ -870,27 +1175,34 @@
       const employeeDialog = document.querySelector("#employee-dialog");
       const employeeForm = document.querySelector("#employee-form");
       const employeePhotoInput = document.querySelector("#employee-photo");
+      const employeeBankSelect = document.querySelector("#employee-bank");
+      const employeeBankAddRow = document.querySelector("#employee-bank-add-row");
+      const employeeNewBankInput = document.querySelector("#employee-new-bank");
+      renderEmployeeBankOptions();
       const openEmployeeForm = async (employee = null) => {
         await documentationFilesReady;
         editingEmployeeId = employee?.id ?? null;
         employeeForm.querySelectorAll(".legacy-option").forEach((option) => option.remove());
         employeeForm.reset();
+        employeeBankAddRow.hidden = true;
+        employeeNewBankInput.value = "";
+        renderEmployeeBankOptions(employee?.bank || "");
         document.querySelector("#employee-form-feedback").textContent = "";
         employeePhotoInput.setCustomValidity("");
         document.querySelector("#employee-dialog-title").textContent = employee ? "Editar colaborador" : "Novo colaborador";
         if (employee) {
-          ["name", "cpf", "birthDate", "address", "email", "pix", "department", "registrationNumber", "admissionDate", "pantsSize", "shirtSize", "shoeSize", "baseSalary", "pis"].forEach((field) => {
+          ["name", "cpf", "birthDate", "address", "email", "pix", "pixType", "bank", "bankBranch", "bankAccount", "department", "registrationNumber", "admissionDate", "pantsSize", "shirtSize", "shoeSize", "baseSalary", "pis"].forEach((field) => {
             employeeForm.elements.namedItem(field).value = employee[field] || "";
           });
-          ["jobFunction", "contract"].forEach((field) => {
+          ["jobFunction", "contract", "pixType"].forEach((field) => {
             const select = employeeForm.elements.namedItem(field);
-            const value = field === "contract" ? employee.contract || "" : employee.jobFunction || "";
-            if (value && ![...select.options].some((option) => option.value === value)) {
-              const legacyOption = new Option(value, value);
+            const selectedValue = field === "contract" ? employee.contract || "" : field === "jobFunction" ? employee.jobFunction || "" : employee.pixType || "";
+            if (selectedValue && ![...select.options].some((option) => option.value === selectedValue)) {
+              const legacyOption = new Option(selectedValue, selectedValue);
               legacyOption.className = "legacy-option";
               select.add(legacyOption);
             }
-            select.value = value;
+            select.value = selectedValue;
           });
           employeeForm.elements.namedItem("active").value = String(employee.active);
         }
@@ -903,6 +1215,83 @@
       document.querySelector("#add-employee").addEventListener("click", () => openEmployeeForm());
       employeeForm.addEventListener("input", updateEmployeeComputedFields);
       employeeForm.addEventListener("change", updateEmployeeComputedFields);
+      document.querySelector("#employee-add-bank").addEventListener("click", () => {
+        employeeBankAddRow.hidden = false;
+        employeeNewBankInput.focus();
+      });
+      document.querySelector("#employee-cancel-bank").addEventListener("click", () => {
+        employeeNewBankInput.value = "";
+        employeeBankAddRow.hidden = true;
+      });
+      const saveEmployeeBank = () => {
+        const bankName = employeeNewBankInput.value.trim();
+        if (!bankName) {
+          employeeNewBankInput.setCustomValidity("Digite o nome do banco.");
+          employeeNewBankInput.reportValidity();
+          employeeNewBankInput.setCustomValidity("");
+          return;
+        }
+        const existingBank = employeeBanks.find((bank) => bank.toLocaleLowerCase("pt-BR") === bankName.toLocaleLowerCase("pt-BR"));
+        if (existingBank) {
+          renderEmployeeBankOptions(existingBank);
+          employeeBankAddRow.hidden = true;
+          employeeNewBankInput.value = "";
+          return;
+        }
+        const updatedBanks = [...employeeBanks, bankName];
+        try {
+          localStorage.setItem(employeeBanksStorageKey, JSON.stringify(updatedBanks));
+        } catch (error) {
+          console.error("Não foi possível adicionar o banco.", error);
+          document.querySelector("#employee-form-feedback").textContent = "Não foi possível salvar a lista de bancos neste dispositivo.";
+          return;
+        }
+        employeeBanks = updatedBanks;
+        renderEmployeeBankOptions(bankName);
+        employeeBankAddRow.hidden = true;
+        employeeNewBankInput.value = "";
+        document.querySelector("#employee-form-feedback").textContent = "";
+      };
+      document.querySelector("#employee-save-bank").addEventListener("click", saveEmployeeBank);
+      employeeNewBankInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          saveEmployeeBank();
+        } else if (event.key === "Escape") {
+          employeeNewBankInput.value = "";
+          employeeBankAddRow.hidden = true;
+        }
+      });
+      const employeeContractDropdown = document.querySelector("#employee-contract-dropdown");
+      const employeeContractToggle = document.querySelector("#employee-contract-toggle");
+      const employeeContractMenu = document.querySelector("#employee-contract-menu");
+      employeeContractToggle.addEventListener("click", () => {
+        const isOpen = employeeContractMenu.hidden;
+        employeeContractMenu.hidden = !isOpen;
+        employeeContractToggle.setAttribute("aria-expanded", String(isOpen));
+        if (isOpen) (employeeContractMenu.querySelector('[aria-checked="true"]') || employeeContractMenu.querySelector(".status-menu-item"))?.focus();
+      });
+      employeeContractMenu.addEventListener("click", (event) => {
+        const option = event.target.closest("[data-contract]");
+        if (!option) return;
+        activeContractFilter = option.dataset.contract;
+        employeeContractMenu.hidden = true;
+        employeeContractToggle.setAttribute("aria-expanded", "false");
+        renderEmployees();
+        employeeContractToggle.focus();
+      });
+      employeeContractMenu.addEventListener("keydown", (event) => {
+        if (event.key !== "Escape") return;
+        employeeContractMenu.hidden = true;
+        employeeContractToggle.setAttribute("aria-expanded", "false");
+        employeeContractToggle.focus();
+      });
+      document.addEventListener("click", (event) => {
+        if (!employeeContractDropdown.contains(event.target)) {
+          employeeContractMenu.hidden = true;
+          employeeContractToggle.setAttribute("aria-expanded", "false");
+        }
+      });
       employeePhotoInput.addEventListener("change", () => {
         const file = employeePhotoInput.files[0];
         if (file && (!file.type.startsWith("image/") || file.size > 10 * 1024 * 1024)) {
@@ -929,6 +1318,8 @@
             tab.classList.toggle("active", selected);
             tab.setAttribute("aria-selected", String(selected));
           });
+          employeeContractMenu.hidden = true;
+          employeeContractToggle.setAttribute("aria-expanded", "false");
           renderEmployees();
         });
       });
@@ -971,6 +1362,258 @@
       });
     }
 
+    if (isSupplierArea) {
+      const supplierDialog = document.querySelector("#supplier-dialog");
+      const supplierForm = document.querySelector("#supplier-form");
+      const supplierPhotoInput = document.querySelector("#supplier-photo");
+      const supplierPhotoPreview = document.querySelector("#supplier-photo-preview");
+      const supplierPhotoEmpty = document.querySelector("#supplier-photo-empty");
+      const supplierPhotoFilename = document.querySelector("#supplier-photo-filename");
+
+      const updateSupplierPhotoPreview = (file = null) => {
+        if (supplierPhotoPreviewUrl) URL.revokeObjectURL(supplierPhotoPreviewUrl);
+        supplierPhotoPreviewUrl = file ? URL.createObjectURL(file) : null;
+        const savedPhoto = editingSupplierId && documentationFiles.get(`supplier:${editingSupplierId}:photo`);
+        const photoUrl = supplierPhotoPreviewUrl || (savedPhoto && getSupplierPhotoUrl(editingSupplierId));
+        supplierPhotoPreview.hidden = !photoUrl;
+        supplierPhotoPreview.removeAttribute("src");
+        if (photoUrl) supplierPhotoPreview.src = photoUrl;
+        supplierPhotoEmpty.hidden = Boolean(photoUrl);
+        supplierPhotoFilename.textContent = file?.name || savedPhoto?.name || "Imagem opcional, até 10 MB";
+      };
+
+      const openSupplierForm = async (supplier = null) => {
+        await documentationFilesReady;
+        editingSupplierId = supplier?.id || null;
+        supplierForm.reset();
+        document.querySelector("#supplier-form-feedback").textContent = "";
+        document.querySelector("#supplier-dialog-title").textContent = supplier ? "Editar fornecedor" : "Novo fornecedor";
+        if (supplier) {
+          ["name", "category", "contact", "phone", "email", "notes"].forEach((field) => {
+            supplierForm.elements.namedItem(field).value = supplier[field] || "";
+          });
+        }
+        updateSupplierPhotoPreview();
+        supplierDialog.showModal();
+        supplierForm.elements.namedItem("name").focus();
+      };
+
+      renderSuppliers();
+      document.querySelector("#add-finance-record").addEventListener("click", () => openSupplierForm());
+      document.querySelector("#supplier-search").addEventListener("input", renderSuppliers);
+      document.querySelector("#supplier-grid").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-edit-supplier]");
+        const supplier = suppliers.find((item) => item.id === button?.dataset.editSupplier);
+        if (supplier) openSupplierForm(supplier);
+      });
+      supplierPhotoInput.addEventListener("change", () => {
+        const file = supplierPhotoInput.files[0];
+        if (file && (!file.type.startsWith("image/") || file.size > 10 * 1024 * 1024)) {
+          supplierPhotoInput.setCustomValidity("Selecione uma imagem de até 10 MB.");
+          supplierPhotoInput.reportValidity();
+          supplierPhotoInput.setCustomValidity("");
+          supplierPhotoInput.value = "";
+          return;
+        }
+        updateSupplierPhotoPreview(file);
+      });
+      document.querySelector("#close-supplier-dialog").addEventListener("click", () => supplierDialog.close());
+      document.querySelector("#cancel-supplier-dialog").addEventListener("click", () => supplierDialog.close());
+      supplierDialog.addEventListener("close", () => {
+        if (supplierPhotoPreviewUrl) URL.revokeObjectURL(supplierPhotoPreviewUrl);
+        supplierPhotoPreviewUrl = null;
+      });
+      supplierDialog.addEventListener("click", (event) => {
+        if (event.target === supplierDialog) supplierDialog.close();
+      });
+      supplierForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (!supplierForm.reportValidity()) return;
+        const data = Object.fromEntries(new FormData(supplierForm).entries());
+        const photo = supplierPhotoInput.files[0];
+        const previousSuppliers = suppliers;
+        const supplier = { id: editingSupplierId || crypto.randomUUID(), ...data };
+        suppliers = editingSupplierId
+          ? suppliers.map((item) => item.id === editingSupplierId ? supplier : item)
+          : [...suppliers, supplier];
+        try {
+          saveFinanceRecords(suppliersStorageKey, suppliers);
+          if (photo) await saveFinanceFile(`supplier:${supplier.id}:photo`, supplier.id, "supplier-photo", photo);
+        } catch (error) {
+          suppliers = previousSuppliers;
+          try {
+            saveFinanceRecords(suppliersStorageKey, suppliers);
+          } catch (rollbackError) {
+            console.error("Não foi possível restaurar a lista anterior de fornecedores.", rollbackError);
+          }
+          console.error("Não foi possível salvar o fornecedor.", error);
+          document.querySelector("#supplier-form-feedback").textContent = "Não foi possível salvar o fornecedor neste dispositivo.";
+          return;
+        }
+        renderSuppliers();
+        supplierDialog.close();
+      });
+    }
+
+    if (isBillsArea) {
+      const billDialog = document.querySelector("#bill-dialog");
+      const billForm = document.querySelector("#bill-form");
+      const billDocumentInput = document.querySelector("#bill-document");
+      const billReceiptInput = document.querySelector("#bill-receipt");
+      const billSupplierSelect = document.querySelector("#bill-supplier");
+      const billTableScroll = document.querySelector("#bill-table-scroll");
+      const billHorizontalScroll = document.querySelector("#bill-horizontal-scroll");
+      const billViewDropdown = document.querySelector("#bill-view-dropdown");
+      const billViewToggle = document.querySelector("#bill-view-toggle");
+      const billViewMenu = document.querySelector("#bill-view-menu");
+
+      billTableScroll.addEventListener("scroll", () => {
+        billHorizontalScroll.scrollLeft = billTableScroll.scrollLeft;
+      });
+      billHorizontalScroll.addEventListener("scroll", () => {
+        billTableScroll.scrollLeft = billHorizontalScroll.scrollLeft;
+      });
+      window.addEventListener("resize", updateBillHorizontalScroll);
+
+      const renderBillSupplierOptions = (selectedId = "") => {
+        billSupplierSelect.innerHTML = '<option value="">Selecione um fornecedor</option>' + suppliers
+          .map((supplier) => `<option value="${escapeHtml(supplier.id)}">${escapeHtml(supplier.name)}</option>`).join("");
+        billSupplierSelect.value = selectedId;
+        billSupplierSelect.required = suppliers.length > 0;
+      };
+
+      const openBillForm = (bill = null) => {
+        suppliers = loadFinanceRecords(suppliersStorageKey);
+        editingBillId = bill?.id || null;
+        billForm.reset();
+        document.querySelector("#bill-form-feedback").textContent = "";
+        document.querySelector("#bill-dialog-title").textContent = bill ? "Editar boleto" : "Novo boleto";
+        renderBillSupplierOptions(bill?.supplierId || "");
+        if (bill) {
+          ["number", "value", "dueDate", "advancePaymentDate", "paymentDate", "fees", "kind", "details", "method", "bank", "installment", "responsible", "creditType"].forEach((field) => {
+            billForm.elements.namedItem(field).value = bill[field] || "";
+          });
+        } else if (activeBillView === "credit") {
+          billForm.elements.namedItem("kind").value = "credit";
+        }
+        const savedDocument = editingBillId && documentationFiles.get(`bill:${editingBillId}:document`);
+        const savedReceipt = editingBillId && documentationFiles.get(`bill:${editingBillId}:receipt`);
+        billDocumentInput.title = savedDocument?.name || "";
+        billReceiptInput.title = savedReceipt?.name || "";
+        if (savedReceipt && !billForm.elements.namedItem("paymentDate").value) {
+          billForm.elements.namedItem("paymentDate").value = getTodayInputDate();
+        }
+        billDialog.showModal();
+        billForm.elements.namedItem("number").focus();
+      };
+
+      renderBillSupplierOptions();
+      renderBills();
+      billViewToggle.addEventListener("click", () => {
+        const isOpen = billViewToggle.getAttribute("aria-expanded") === "true";
+        billViewMenu.hidden = isOpen;
+        billViewToggle.setAttribute("aria-expanded", String(!isOpen));
+        if (!isOpen) billViewMenu.querySelector(`[data-bill-view="${activeBillView}"]`)?.focus();
+      });
+      billViewMenu.addEventListener("click", (event) => {
+        const option = event.target.closest("[data-bill-view]");
+        if (!option) return;
+        activeBillView = option.dataset.billView;
+        billViewMenu.hidden = true;
+        billViewToggle.setAttribute("aria-expanded", "false");
+        renderBills();
+        billViewToggle.focus();
+      });
+      document.addEventListener("click", (event) => {
+        if (billViewDropdown.contains(event.target)) return;
+        billViewMenu.hidden = true;
+        billViewToggle.setAttribute("aria-expanded", "false");
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key !== "Escape" || billViewMenu.hidden) return;
+        billViewMenu.hidden = true;
+        billViewToggle.setAttribute("aria-expanded", "false");
+        billViewToggle.focus();
+      });
+      window.addEventListener("storage", (event) => {
+        if (event.key !== suppliersStorageKey) return;
+        suppliers = loadFinanceRecords(suppliersStorageKey);
+        renderBillSupplierOptions(billSupplierSelect.value);
+        renderBills();
+      });
+      document.querySelector("#add-finance-record").addEventListener("click", () => openBillForm());
+      document.querySelector("#bill-search").addEventListener("input", renderBills);
+      billReceiptInput.addEventListener("change", () => {
+        const paymentDateInput = billForm.elements.namedItem("paymentDate");
+        if (billReceiptInput.files.length && !paymentDateInput.value) {
+          paymentDateInput.value = getTodayInputDate();
+        }
+      });
+      document.querySelector("#bill-rows").addEventListener("click", (event) => {
+        const editButton = event.target.closest("[data-edit-bill]");
+        if (editButton) {
+          const bill = bills.find((item) => item.id === editButton.dataset.editBill);
+          if (bill) openBillForm(bill);
+          return;
+        }
+        const deleteButton = event.target.closest("[data-delete-bill]");
+        if (deleteButton) {
+          bills = bills.filter((item) => item.id !== deleteButton.dataset.deleteBill);
+          try {
+            saveFinanceRecords(billsStorageKey, bills);
+            renderBills();
+          } catch (error) {
+            console.error("Não foi possível excluir o boleto.", error);
+            document.querySelector("#bill-feedback").textContent = "Não foi possível excluir o boleto neste dispositivo.";
+          }
+          return;
+        }
+        const downloadButton = event.target.closest('[data-file-action="download"]');
+        if (downloadButton) downloadDocumentationFile(downloadButton.dataset.fileKey);
+      });
+      document.querySelector("#close-bill-dialog").addEventListener("click", () => billDialog.close());
+      document.querySelector("#cancel-bill-dialog").addEventListener("click", () => billDialog.close());
+      billDialog.addEventListener("click", (event) => {
+        if (event.target === billDialog) billDialog.close();
+      });
+      billForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (!billForm.reportValidity()) return;
+        const data = Object.fromEntries(new FormData(billForm).entries());
+        delete data.document;
+        delete data.receipt;
+        data.supplierName = suppliers.find((supplier) => supplier.id === data.supplierId)?.name || "";
+        const attachedFile = billDocumentInput.files[0];
+        const receiptFile = billReceiptInput.files[0];
+        const savedReceipt = editingBillId && documentationFiles.has(`bill:${editingBillId}:receipt`);
+        if ((receiptFile || savedReceipt) && !data.paymentDate) {
+          data.paymentDate = getTodayInputDate();
+        }
+        const previousBills = bills;
+        const bill = { id: editingBillId || crypto.randomUUID(), ...data };
+        bills = editingBillId
+          ? bills.map((item) => item.id === editingBillId ? bill : item)
+          : [...bills, bill];
+        try {
+          saveFinanceRecords(billsStorageKey, bills);
+          if (attachedFile) await saveFinanceFile(`bill:${bill.id}:document`, bill.id, "bill-document", attachedFile);
+          if (receiptFile) await saveFinanceFile(`bill:${bill.id}:receipt`, bill.id, "bill-receipt", receiptFile);
+        } catch (error) {
+          bills = previousBills;
+          try {
+            saveFinanceRecords(billsStorageKey, bills);
+          } catch (rollbackError) {
+            console.error("Não foi possível restaurar a lista anterior de boletos.", rollbackError);
+          }
+          console.error("Não foi possível salvar o boleto.", error);
+          document.querySelector("#bill-form-feedback").textContent = "Não foi possível salvar o boleto neste dispositivo.";
+          return;
+        }
+        renderBills();
+        billDialog.close();
+      });
+    }
+
     document.querySelector("#delete-client").addEventListener("click", () => {
       // Exclui somente depois da confirmacao do usuario.
       const client = clients.find((item) => item.id === editingId);
@@ -990,6 +1633,8 @@
     documentationFilesReady = loadDocumentationFiles().then(() => {
       render();
       if (isPersonnelArea) renderEmployees();
+      if (isSupplierArea) renderSuppliers();
+      if (isBillsArea) renderBills();
       if (dialog.open) updateCommercialDocumentFields(editingId);
     }).catch((error) => {
       console.error("Não foi possível carregar os anexos.", error);
